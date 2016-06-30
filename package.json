@@ -1,0 +1,39 @@
+{
+    "name":                 "conference",
+    "version":              "9.9.9",
+    "description":
+
+      "Framework communicating using a Compassion atomic log.",
+
+    "keywords":
+    [
+                            "paxos", "database", "database", "network", "consensus",
+                            "atomic", "broadcast", "multi-paxos", "queue", "fifo"
+    ],
+    "author":               "Alan Gutierrez <alan@prettyrobots.com>",
+    "homepage":             "https://github.com/bigeasy/conference",
+    "bugs":                 "https://github.com/bigeasy/conference/issues",
+    "license":              "MIT",
+    "repository":
+    {
+                            "type": "git",
+                            "url": "http://github.com/bigeasy/conference.git"
+    },
+    "dependencies":
+    {
+                            "abend":                        "1.0.x",
+                            "cadence":                      "1.0.x",
+                            "cliffhanger":                  "1.0.x",
+                            "operation":                    "1.1.x",
+                            "magazine":                     "1.0.x"
+    },
+    "devDependencies":
+    {
+                            "proof":                        "1.0.x"
+    },
+    "main":                 "conference",
+    "scripts":
+    {
+                            "test": "proof platform win32 && proof test */*/*.t.js || t/test"
+    }
+}

@@ -25,7 +25,8 @@
                             "cadence":                      "1.0.x",
                             "cliffhanger":                  "1.0.x",
                             "operation":                    "1.1.x",
-                            "magazine":                     "1.0.x"
+                            "magazine":                     "1.0.x",
+                            "prolific.logger":              "0.0.x"
     },
     "devDependencies":
     {

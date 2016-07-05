@@ -3,6 +3,7 @@ var abend = require('abend')
 var assert = require('assert')
 
 var cadence = require('cadence')
+var logger = require('prolific.logger').createLogger('bigeasy.conference')
 
 var Operation = require('operation')
 
@@ -27,6 +28,7 @@ function Conference (conduit, self) {
     this._exiles = []
     this._operations = {}
     this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
+    this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
 }
 
 Conference.prototype._createOperation = function (operation) {
@@ -197,6 +199,7 @@ Conference.prototype._message = cadence(function (async, message) {
                 vargs: [ value.request ]
             }, async())
         }, function (response) {
+            logger.info('broadcasted', { mesage: message, response: response })
             this._conduit.send(this._colleague.reinstatementId, {
                 namespace: 'bigeasy.compassion.colleague.conference',
                 type: 'reduce',

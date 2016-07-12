@@ -4,6 +4,7 @@ var assert = require('assert')
 
 var cadence = require('cadence')
 var logger = require('prolific.logger').createLogger('bigeasy.conference')
+var interrupt = require('interrupt').createInterrupter('bigeasy.conference')
 
 var Operation = require('operation')
 
@@ -128,9 +129,12 @@ Conference.prototype._message = cadence(function (async, message) {
         // Send a collapse message either here or from conduit.
         if (value.collapsed) {
 // TODO Not implemented.
-            this._broadcasts.clear()
-            throw new Error('collapsed')
-        } else if (value.government.promise == '1/0') {
+// TODO Initial, naive implementation. Cancel and reset transitions.
+            this._broadcasts.expire(Infinity)
+            this._cliffhanger.cancel()
+            this._transition = null
+        }
+        if (value.government.promise == '1/0') {
             var leader = value.government.majority[0]
 // TODO What is all this?
 // TODO Come back and think hard about about rejoining.
@@ -142,6 +146,8 @@ Conference.prototype._message = cadence(function (async, message) {
                 vargs: [ true, this._colleague, value.properties[leader] ]
             }, abend)
             return
+        } else {
+            this.isLeader = value.government.majority[0] == this._colleague.colleagueId
         }
 
 // TODO Exile is also indempotent. It will be run whether or not immigration
@@ -215,6 +221,9 @@ Conference.prototype._message = cadence(function (async, message) {
         var value = message.entry.value
         // TODO Use Magazine.
         var reduction = this._reductions.hold(value.reductionKey, {})
+        if (value.cancelable) {
+            this._cancelable[value.reductionKey] = {}
+        }
         var complete = true
         reduction.value[value.from] = value.response
         for (var id in this._participantIds) {
@@ -332,7 +341,8 @@ Conference.prototype._enqueue = function (message, callback) {
 Conference.prototype._send = cadence(function (async, cancelable, method, colleagueId, message) {
     var cookie = this._cliffhanger.invoke(async())
     if (cancelable) {
-        this._cancelable[cookie] = cancelable
+        var participantId = this._participantIds[colleagueId]
+        this._cancelable[method + '/' + participantId + '/' + cookie] = { cookie: cookie }
     }
     this._conduit.send(this._colleague.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
@@ -348,16 +358,17 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
 
 Conference.prototype._broadcast = cadence(function (async, cancelable, method, message) {
     var cookie = this._cliffhanger.invoke(async())
-    if (cancelable) {
-        this._cancelable[cookie] = cancelable
-    }
     var participantId = this._participantIds[this._colleague.colleagueId]
     var reductionKey = method + '/' + participantId + '/' + cookie
+    if (cancelable) {
+        this._cancelable[reductionKey] = { cookie: cookie }
+    }
     this._broadcasts.hold(reductionKey, { cookie: cookie }).release()
     this._conduit.send(this._colleague.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'broadcast',
         reductionKey: reductionKey,
+        cancelable: cancelable,
         cookie: cookie,
         method: method,
         request: message
@@ -371,6 +382,7 @@ Conference.prototype._reduce = cadence(function (async, cancelable, method, conv
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'converge',
         reductionKey: reductionKey,
+        cancelable: cancelable,
         cookie: cookie,
         method: method,
         request: null,
@@ -398,7 +410,7 @@ Conference.prototype._exiled = cadence(function (async, responses, participantId
     this._immigrants = this._immigrants.filter(function (immigrantId) {
         return immigrantId == participantId
     })
-    if (this._exiles[0].participantId == participantId) {
+    if (this._exiles.length != 0 && this._exiles[0].participantId == participantId) {
         this._exiles.shift()
     }
     delete this.properties[participantId]
@@ -406,6 +418,14 @@ Conference.prototype._exiled = cadence(function (async, responses, participantId
 })
 
 Conference.prototype._cancel = function () {
+    for (var key in this._cancelable) {
+        this._broadcasts.hold(key, null).remove()
+        this._reductions.hold(key, null).remove()
+        var cookie = this._cancelable[key].cookie
+        if (cookie != null) {
+            this._cliffhanger.resolve(cookie, [ interrupt({ name: 'cancel' }) ])
+        }
+    }
     this._cliffhanger.cancel(function (cookie) {
         return this._cancelable[cookie]
     })

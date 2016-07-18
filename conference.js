@@ -128,7 +128,6 @@ Conference.prototype._message = cadence(function (async, message) {
 
         // Send a collapse message either here or from conduit.
         if (value.collapsed) {
-// TODO Not implemented.
 // TODO Initial, naive implementation. Cancel and reset transitions.
             this._broadcasts.expire(Infinity)
             this._cliffhanger.cancel()
@@ -196,6 +195,50 @@ Conference.prototype._message = cadence(function (async, message) {
                 }, abend)
             }
         }
+    } else if (message.entry.type == 'paused' && message.entry.from == this._colleague.participantId) {
+        this._pause = { head: message, tail: message }
+    } else if (message.entry.value.to == this._colleague.participantId) {
+        var value = message.entry.value
+        var participantId = this._colleague.participantId
+        switch (value.type) {
+        case 'pause':
+            this._conduit.send(this._colleague.reinstatementId, {
+                namespace: 'bigeasy.compassion.colleague.conference',
+                type: 'paused',
+                from: this._colleague.participantId,
+                to: value.from,
+                cookie: value.cookie
+            }, async())
+            break
+        case 'paused':
+            this._cliffhanger.resolve(value.cookie, [])
+            break
+            break
+        case 'send':
+            if (participantId == value.to) {
+                async(function () {
+                    this._operate({
+                        qualifier: 'receive',
+                        method: value.method,
+                        vargs: [ value.request ]
+                    }, async())
+                }, function (response) {
+                    this._conduit.send(this._colleague.reinstatementId, {
+                        namespace: 'bigeasy.compassion.colleague.conference',
+                        type: 'respond',
+                        to: value.from,
+                        response: response,
+                        cookie: value.cookie
+                    }, async())
+                })
+            }
+            break
+        case 'respond':
+            this._cliffhanger.resolve(value.cookie, [ null, value.response ])
+            break
+        }
+    } else if (this._pause != null) {
+        this._pause.tail = this._pause.tail.next = message
     } else if (message.entry.value.type == 'broadcast') {
         var value = message.entry.value
         async(function () {
@@ -250,33 +293,6 @@ Conference.prototype._message = cadence(function (async, message) {
             })
         } else {
             reduction.release()
-        }
-    } else if (message.entry.value.to == this._colleague.participantId) {
-        var value = message.entry.value
-        var participantId = this._colleague.participantId
-        switch (value.type) {
-        case 'send':
-            if (participantId == value.to) {
-                async(function () {
-                    this._operate({
-                        qualifier: 'receive',
-                        method: value.method,
-                        vargs: [ value.request ]
-                    }, async())
-                }, function (response) {
-                    this._conduit.send(this._colleague.reinstatementId, {
-                        namespace: 'bigeasy.compassion.colleague.conference',
-                        type: 'respond',
-                        to: value.from,
-                        response: response,
-                        cookie: value.cookie
-                    }, async())
-                })
-            }
-            break
-        case 'respond':
-            this._cliffhanger.resolve(value.cookie, [ null, value.response ])
-            break
         }
     }
     this._checkTransitions()
@@ -338,6 +354,22 @@ Conference.prototype._enqueue = function (message, callback) {
         break
     }
 }
+
+Conference.prototype._pause = cadence(function (async, colleagueId) {
+    var cookie = this._cliffhanger.invoke(async())
+    var participantId = this._participantIds[colleagueId]
+    this._cancelable['!pause/' + participantId + '/' + cookie] = { cookie: cookie }
+    this._conduit.send(this._colleague.reinstatementId, {
+        namespace: 'bigeasy.compassion.colleague.conference',
+        type: 'pause',
+        cancelable: cancelable,
+        from: this._participantIds[this._colleague.colleagueId],
+        to: colleagueId,
+        method: method,
+        cookie: cookie
+    }, async())
+})
+
 Conference.prototype._send = cadence(function (async, cancelable, method, colleagueId, message) {
     var cookie = this._cliffhanger.invoke(async())
     if (cancelable) {
@@ -396,11 +428,21 @@ Conference.prototype._naturalized = cadence(function (async, responses, particip
     if (this._immigrants[0] == participantId) {
         this._immigrants.shift()
     }
+    console.error('>>>', 'naturalized!', participantId)
     if (this._colleague.participantId == participantId) {
         this._conduit.naturalized()
+        var iterator = this._pause.head.next
+        this._pause = null
+        var loop = async(function () {
+            if (iterator == null) {
+                return [ loop.break ]
+            }
+            iterator = iterator.next
+            this._message(iterator, async())
+        })()
+    } else {
+        this._checkTransitions()
     }
-    console.error('>>>', 'naturalized!', participantId)
-    this._checkTransitions()
 })
 
 Conference.prototype._exiled = cadence(function (async, responses, participantId) {

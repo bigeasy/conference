@@ -5,7 +5,7 @@ function Cancelable (conference) {
 }
 
 Cancelable.prototype.send = cadence(function (async, method, colleagueId, value) {
-    this._conference._send(true, 'send', '.' + method, colleagueId, value, async())
+    this._conference._send(true, '.' + method, colleagueId, value, async())
 })
 
 Cancelable.prototype.broadcast = cadence(function (async, method, value) {

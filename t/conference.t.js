@@ -1,8 +1,9 @@
-require('proof')(6, require('cadence')(prove))
+require('proof')(9, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
     var Conference = require('..')
+    var events = require('events')
     assert(Conference, 'require')
 
     var wait
@@ -11,12 +12,11 @@ function prove (async, assert) {
             assert(this === object, 'object this')
         },
         join: cadence(function (async) {
-            console.log('called')
             wait()
             return {}
         })
     }
-    var conference = new Conference({}, object)
+    var conference = new Conference({ messages: new events.EventEmitter }, object)
 
     var specific = {
         test: function () {
@@ -40,12 +40,10 @@ function prove (async, assert) {
         }, async())
     }, function () {
         wait = async()
-        assert(conference._colleague, {
-            islandId: '0',
-            reinstatementId: 0,
-            colleagueId: '0',
-            participantId: null
-        }, 'set colleague id')
+        assert(conference.islandId, '0', 'set island id')
+        assert(conference.reinstatementId, 0, 'set reinstatement id')
+        assert(conference.colleagueId, '0', 'set colleague id')
+        assert(conference.participantId, null, 'participant id unset')
         conference._enqueue({
             type: 'entry',
 // TODO Add government flag to message.

@@ -17,7 +17,7 @@ Cancelable.prototype.reduce = cadence(function (async, method, value) {
 })
 
 Cancelable.prototype.pause = cadence(function (async, participantId) {
-    this._conference._send(participantId, async())
+    this._conference._pause(participantId, async())
 })
 
 Cancelable.prototype.naturalize = cadence(function (async, participantId) {

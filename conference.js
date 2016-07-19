@@ -13,11 +13,14 @@ var Cancelable = require('./cancelable')
 
 var Cache = require('magazine')
 
-function Conference (conduit, self) {
+function Conference (colleague, self) {
     this.isLeader = false
+    this.islandId = null
+    this.reinstatementId = null
+    this.colleagueId = null
+    this.participantId = null
     this._cliffhanger = new Cliffhanger
-    this._colleague = null
-    this._conduit = conduit
+    this._colleague = colleague
     this._self = self || null
     this.properties = {}
     this._participantIds = null
@@ -30,6 +33,7 @@ function Conference (conduit, self) {
     this._operations = {}
     this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
     this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
+    this._colleague.messages.on('message', this.message.bind(this))
 }
 
 Conference.prototype._createOperation = function (operation) {
@@ -100,12 +104,9 @@ Conference.prototype._operate = cadence(function (async, message) {
 
 Conference.prototype._message = cadence(function (async, message) {
     if (message.type == 'reinstate') {
-        this._colleague = {
-            islandId: message.islandId,
-            reinstatementId: message.reinstatementId,
-            colleagueId: message.colleagueId,
-            participantId: null
-        }
+        this.islandId = message.islandId
+        this.reinstatementId = message.reinstatementId,
+        this.colleagueId = message.colleagueId
     } else if (message.entry.value.government) {
         var value = message.entry.value
 
@@ -124,7 +125,7 @@ Conference.prototype._message = cadence(function (async, message) {
             .forEach(function (id) {
                 this._participantIds[id] = value.properties[id].immigrated + ':' + id
             }, this)
-        this._colleague.participantId = this._participantIds[this._colleague.colleagueId]
+        this.participantId = this._participantIds[this.colleagueId]
 
         // Send a collapse message either here or from conduit.
         if (value.collapsed) {
@@ -146,7 +147,7 @@ Conference.prototype._message = cadence(function (async, message) {
             }, abend)
             return
         } else {
-            this.isLeader = value.government.majority[0] == this._colleague.colleagueId
+            this.isLeader = value.government.majority[0] == this.colleagueId
         }
 
 // TODO Exile is also indempotent. It will be run whether or not immigration
@@ -183,7 +184,7 @@ Conference.prototype._message = cadence(function (async, message) {
 // TODO Put id in this object.
             this._immigrants.push(this._participantIds[immigration.id])
             this.properties[this._participantIds[immigration.id]] = value.properties[immigration.id]
-            if (this._colleague.participantId == this._participantIds[immigration.id]) {
+            if (this.participantId == this._participantIds[immigration.id]) {
                 this._operate({
                     qualifier: 'internal',
                     method: 'join',
@@ -195,17 +196,17 @@ Conference.prototype._message = cadence(function (async, message) {
                 }, abend)
             }
         }
-    } else if (message.entry.type == 'paused' && message.entry.from == this._colleague.participantId) {
-        this._pause = { head: message, tail: message }
-    } else if (message.entry.value.to == this._colleague.participantId) {
+    } else if (message.entry.type == 'paused' && message.entry.from == this.participantId) {
+        this._paused = { head: message, tail: message }
+    } else if (message.entry.value.to == this.participantId) {
         var value = message.entry.value
-        var participantId = this._colleague.participantId
+        var participantId = this.participantId
         switch (value.type) {
         case 'pause':
-            this._conduit.send(this._colleague.reinstatementId, {
+            this._colleague.publish(this.reinstatementId, {
                 namespace: 'bigeasy.compassion.colleague.conference',
                 type: 'paused',
-                from: this._colleague.participantId,
+                from: this.participantId,
                 to: value.from,
                 cookie: value.cookie
             }, async())
@@ -223,7 +224,7 @@ Conference.prototype._message = cadence(function (async, message) {
                         vargs: [ value.request ]
                     }, async())
                 }, function (response) {
-                    this._conduit.send(this._colleague.reinstatementId, {
+                    this._colleague.publish(this.reinstatementId, {
                         namespace: 'bigeasy.compassion.colleague.conference',
                         type: 'respond',
                         to: value.from,
@@ -237,8 +238,22 @@ Conference.prototype._message = cadence(function (async, message) {
             this._cliffhanger.resolve(value.cookie, [ null, value.response ])
             break
         }
-    } else if (this._pause != null) {
-        this._pause.tail = this._pause.tail.next = message
+    } else if (this._paused != null) {
+        console.log('----------->', this._paused)
+        this._paused.tail = this._paused.tail.next = message
+    } else if (message.entry.value.type == 'publish') {
+        var value = message.entry.value
+        async(function () {
+            this._operate({
+                qualifier: 'receive',
+                method: value.method,
+                vargs: [ value.request ]
+            }, async())
+        }, function (response) {
+            if (value.from == this.participantId) {
+                this._cliffhanger.resolve(value.cookie, [ null, response ])
+            }
+        })
     } else if (message.entry.value.type == 'broadcast') {
         var value = message.entry.value
         async(function () {
@@ -249,10 +264,10 @@ Conference.prototype._message = cadence(function (async, message) {
             }, async())
         }, function (response) {
             logger.info('broadcasted', { mesage: message, response: response })
-            this._conduit.send(this._colleague.reinstatementId, {
+            this._colleague.publish(this.reinstatementId, {
                 namespace: 'bigeasy.compassion.colleague.conference',
                 type: 'reduce',
-                from: this._colleague.participantId,
+                from: this.participantId,
                 reductionKey: value.reductionKey,
                 cookie: value.cookie,
                 method: value.method,
@@ -359,13 +374,11 @@ Conference.prototype._pause = cadence(function (async, colleagueId) {
     var cookie = this._cliffhanger.invoke(async())
     var participantId = this._participantIds[colleagueId]
     this._cancelable['!pause/' + participantId + '/' + cookie] = { cookie: cookie }
-    this._conduit.send(this._colleague.reinstatementId, {
+    this._colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'pause',
-        cancelable: cancelable,
-        from: this._participantIds[this._colleague.colleagueId],
+        from: this._participantIds[this.colleagueId],
         to: colleagueId,
-        method: method,
         cookie: cookie
     }, async())
 })
@@ -376,11 +389,11 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
         var participantId = this._participantIds[colleagueId]
         this._cancelable[method + '/' + participantId + '/' + cookie] = { cookie: cookie }
     }
-    this._conduit.send(this._colleague.reinstatementId, {
+    this._colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'send',
         cancelable: cancelable,
-        from: this._participantIds[this._colleague.colleagueId],
+        from: this._participantIds[this.colleagueId],
         to: colleagueId,
         method: method,
         request: message,
@@ -388,15 +401,29 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
     }, async())
 })
 
+Conference.prototype.publish = cadence(function (async, method, message) {
+    var cookie = this._cliffhanger.invoke(async())
+    console.log(this._colleague)
+    console.log(this._colleague.publish)
+    this._colleague.publish(this.reinstatementId, {
+        namespace: 'bigeasy.compassion.colleague.conference',
+        type: 'publish',
+        from: this.participantId,
+        method: '.' + method,
+        request: message,
+        cookie: cookie
+    }, async())
+})
+
 Conference.prototype._broadcast = cadence(function (async, cancelable, method, message) {
     var cookie = this._cliffhanger.invoke(async())
-    var participantId = this._participantIds[this._colleague.colleagueId]
+    var participantId = this._participantIds[this.colleagueId]
     var reductionKey = method + '/' + participantId + '/' + cookie
     if (cancelable) {
         this._cancelable[reductionKey] = { cookie: cookie }
     }
     this._broadcasts.hold(reductionKey, { cookie: cookie }).release()
-    this._conduit.send(this._colleague.reinstatementId, {
+    this._colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'broadcast',
         reductionKey: reductionKey,
@@ -408,9 +435,9 @@ Conference.prototype._broadcast = cadence(function (async, cancelable, method, m
 })
 
 Conference.prototype._reduce = cadence(function (async, cancelable, method, converanceId, message) {
-    var participantId = this._participantIds[this._colleague.colleagueId]
+    var participantId = this._participantIds[this.colleagueId]
     var reductionKey = method + '/' + converanceId
-    this._conduit.send({
+    this._colleague.publish({
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'converge',
         reductionKey: reductionKey,
@@ -429,10 +456,10 @@ Conference.prototype._naturalized = cadence(function (async, responses, particip
         this._immigrants.shift()
     }
     console.error('>>>', 'naturalized!', participantId)
-    if (this._colleague.participantId == participantId) {
-        this._conduit.naturalized()
-        var iterator = this._pause.head.next
-        this._pause = null
+    if (this.participantId == participantId) {
+        this._colleague.naturalized()
+        var iterator = this._paused.head.next
+        this._paused = null
         var loop = async(function () {
             if (iterator == null) {
                 return [ loop.break ]

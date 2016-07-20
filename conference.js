@@ -239,7 +239,6 @@ Conference.prototype._message = cadence(function (async, message) {
             break
         }
     } else if (this._paused != null) {
-        console.log('----------->', this._paused)
         this._paused.tail = this._paused.tail.next = message
     } else if (message.entry.value.type == 'publish') {
         var value = message.entry.value
@@ -403,8 +402,6 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
 
 Conference.prototype.publish = cadence(function (async, method, message) {
     var cookie = this._cliffhanger.invoke(async())
-    console.log(this._colleague)
-    console.log(this._colleague.publish)
     this._colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'publish',

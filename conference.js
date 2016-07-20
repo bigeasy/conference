@@ -458,7 +458,11 @@ Conference.prototype._naturalized = cadence(function (async, responses, particip
     console.error('>>>', 'naturalized!', participantId)
     if (this.participantId == participantId) {
         this._colleague.naturalized()
-        var iterator = this._paused.head.next
+// TODO Mark and track naturalized.
+// TODO Do I need some sort of a leadership work queue? Kind of. Something that
+// begins and ends, so I can naturalize a member, then as a separate, cancelable
+// task, I can add it to the routing table.
+        var iterator = this._paused && this._paused.head.next
         this._paused = null
         var loop = async(function () {
             if (iterator == null) {

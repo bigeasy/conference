@@ -131,7 +131,7 @@ Conference.prototype._message = cadence(function (async, message) {
         if (value.collapsed) {
 // TODO Initial, naive implementation. Cancel and reset transitions.
             this._broadcasts.expire(Infinity)
-            this._cliffhanger.cancel()
+            this._cliffhanger.cancel(function () { return true })
             this._transition = null
         }
         if (value.government.promise == '1/0') {

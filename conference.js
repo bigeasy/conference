@@ -295,6 +295,11 @@ Conference.prototype._message = cadence(function (async, message) {
                 this._operate({
                     qualifier: 'reduced',
                     method: value.method,
+// TODO Feel like these should be swapped in order.
+// TODO Return an array of objects because 99% of the time, you only care about
+// the values, not about the keys, you're looking at the aggregate and not
+// picking out specifics, so you'll want to use `Array.map`, and `Array.reduce`
+// and the like.
                     vargs: [ reduction.value, value.request ]
                 }, async())
             }, function () {

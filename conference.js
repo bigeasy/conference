@@ -291,6 +291,10 @@ Conference.prototype._message = cadence(function (async, message) {
         }
         if (complete) {
             reduction.remove()
+            var reduced = []
+            for (var id in reduction.value) {
+                reduced.push({ participantId: id, value: reduced.value[id] })
+            }
             async(function () {
                 this._operate({
                     qualifier: 'reduced',
@@ -300,12 +304,12 @@ Conference.prototype._message = cadence(function (async, message) {
 // the values, not about the keys, you're looking at the aggregate and not
 // picking out specifics, so you'll want to use `Array.map`, and `Array.reduce`
 // and the like.
-                    vargs: [ reduction.value, value.request ]
+                    vargs: [ reduced, value.request ]
                 }, async())
             }, function () {
                 var cartridge = this._broadcasts.hold(value.reductionKey, null)
                 if (cartridge.value != null) {
-                    this._cliffhanger.resolve(cartridge.value.cookie, [ null, reduction.value ])
+                    this._cliffhanger.resolve(cartridge.value.cookie, [ null, reduced ])
                 }
                 // TODO Might leak? Use Cadence finally.
                 cartridge.release()

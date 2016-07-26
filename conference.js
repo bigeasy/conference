@@ -293,7 +293,7 @@ Conference.prototype._message = cadence(function (async, message) {
             reduction.remove()
             var reduced = []
             for (var id in reduction.value) {
-                reduced.push({ participantId: id, value: reduced.value[id] })
+                reduced.push({ participantId: id, value: reduction.value[id] })
             }
             async(function () {
                 this._operate({

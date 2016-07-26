@@ -13,11 +13,13 @@ var Cancelable = require('./cancelable')
 
 var Cache = require('magazine')
 
+var slice = [].slice
+
 function Conference (colleague, self) {
     this.isLeader = false
     this.islandId = null
     this.reinstatementId = null
-    this.colleagueId = null
+    this.colleagueId = colleague.colleagueId
     this.participantId = null
     this._cliffhanger = new Cliffhanger
     this._colleague = colleague
@@ -34,6 +36,7 @@ function Conference (colleague, self) {
     this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
     this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
     this._colleague.messages.on('message', this.message.bind(this))
+    this._colleague.messages.on('replay', this.replay.bind(this))
 }
 
 Conference.prototype._createOperation = function (operation) {
@@ -68,6 +71,10 @@ Conference.prototype.exile = function (operation) {
 
 Conference.prototype.receive = function (name, operation) {
     this._setOperation('receive', '.' + name, operation)
+}
+
+Conference.prototype.operate = function (name, operation) {
+    this._setOperation('operate', '.' + name, operation)
 }
 
 Conference.prototype.reduced = function (name, operation) {
@@ -371,6 +378,23 @@ Conference.prototype._enqueue = function (message, callback) {
         }
         break
     }
+}
+
+Conference.prototype.replay = function (entry) {
+    if (entry.qualifier == 'bigeasy.conference' && entry.name == 'replay') {
+        var operation = this._getOperation('operate', '.' + entry.method)
+        if (operation == null) {
+            return null
+        }
+        operation.apply(entry.vargs)
+    }
+}
+
+Conference.prototype.record = function () {
+    var vargs = slice.call(arguments)
+    var method = vargs.shift()
+    logger.info('replay', { method: method, vargs: vargs })
+    this._operate({ qualifier: 'operate', method: '.' + method, vargs: vargs }, abend)
 }
 
 Conference.prototype._pause = cadence(function (async, colleagueId) {

@@ -27,7 +27,8 @@
                             "interrupt":                    "2.1.x",
                             "operation":                    "1.1.x",
                             "magazine":                     "1.0.x",
-                            "prolific.logger":              "0.0.x"
+                            "prolific.logger":              "0.0.x",
+                            "rescue":                       "2.2.x"
     },
     "devDependencies":
     {

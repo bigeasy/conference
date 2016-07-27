@@ -474,7 +474,7 @@ Conference.prototype._reduce = cadence(function (async, cancelable, method, conv
     }, async())
 })
 
-Conference.prototype._naturalized = cadence(function (async, responses, participantId) {
+Conference.prototype._naturalized = cadence(function (async, participantId) {
     assert(this._transtion == null || this._transition == participantId)
     this._transition = null
     if (this._immigrants[0] == participantId) {
@@ -501,7 +501,7 @@ Conference.prototype._naturalized = cadence(function (async, responses, particip
     }
 })
 
-Conference.prototype._exiled = cadence(function (async, responses, participantId) {
+Conference.prototype._exiled = cadence(function (async, participantId) {
 // TODO Set `_transition` to `null` on collpase.
     assert(this._transtion == null || this._transition == participantId)
     this._transition = null

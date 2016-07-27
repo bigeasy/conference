@@ -22,7 +22,7 @@ function Conference (colleague, self) {
     this.colleagueId = colleague.colleagueId
     this.participantId = null
     this._cliffhanger = new Cliffhanger
-    this._colleague = colleague
+    this.colleague = colleague
     this._self = self || null
     this.properties = {}
     this._participantIds = null
@@ -35,8 +35,8 @@ function Conference (colleague, self) {
     this._operations = {}
     this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
     this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
-    this._colleague.messages.on('message', this.message.bind(this))
-    this._colleague.messages.on('replay', this.replay.bind(this))
+    this.colleague.messages.on('message', this.message.bind(this))
+    this.colleague.messages.on('replay', this.replay.bind(this))
 }
 
 Conference.prototype._createOperation = function (operation) {
@@ -150,7 +150,7 @@ Conference.prototype._message = cadence(function (async, message) {
             this._operate({
                 qualifier: 'internal',
                 method: 'join',
-                vargs: [ true, this._colleague, value.properties[leader] ]
+                vargs: [ true, this.colleague, value.properties[leader] ]
             }, abend)
             return
         } else {
@@ -197,7 +197,7 @@ Conference.prototype._message = cadence(function (async, message) {
                     method: 'join',
                     vargs: [
                         false,
-                        this._colleague,
+                        this.colleague,
                         value.properties[immigration.id]
                     ]
                 }, abend)
@@ -210,7 +210,7 @@ Conference.prototype._message = cadence(function (async, message) {
         var participantId = this.participantId
         switch (value.type) {
         case 'pause':
-            this._colleague.publish(this.reinstatementId, {
+            this.colleague.publish(this.reinstatementId, {
                 namespace: 'bigeasy.compassion.colleague.conference',
                 type: 'paused',
                 from: this.participantId,
@@ -231,7 +231,7 @@ Conference.prototype._message = cadence(function (async, message) {
                         vargs: [ value.request ]
                     }, async())
                 }, function (response) {
-                    this._colleague.publish(this.reinstatementId, {
+                    this.colleague.publish(this.reinstatementId, {
                         namespace: 'bigeasy.compassion.colleague.conference',
                         type: 'respond',
                         to: value.from,
@@ -270,7 +270,7 @@ Conference.prototype._message = cadence(function (async, message) {
             }, async())
         }, function (response) {
             logger.info('broadcasted', { mesage: message, response: response })
-            this._colleague.publish(this.reinstatementId, {
+            this.colleague.publish(this.reinstatementId, {
                 namespace: 'bigeasy.compassion.colleague.conference',
                 type: 'reduce',
                 from: this.participantId,
@@ -401,7 +401,7 @@ Conference.prototype._pause = cadence(function (async, colleagueId) {
     var cookie = this._cliffhanger.invoke(async())
     var participantId = this._participantIds[colleagueId]
     this._cancelable['!pause/' + participantId + '/' + cookie] = { cookie: cookie }
-    this._colleague.publish(this.reinstatementId, {
+    this.colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'pause',
         from: this._participantIds[this.colleagueId],
@@ -416,7 +416,7 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
         var participantId = this._participantIds[colleagueId]
         this._cancelable[method + '/' + participantId + '/' + cookie] = { cookie: cookie }
     }
-    this._colleague.publish(this.reinstatementId, {
+    this.colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'send',
         cancelable: cancelable,
@@ -430,7 +430,7 @@ Conference.prototype._send = cadence(function (async, cancelable, method, collea
 
 Conference.prototype.publish = cadence(function (async, method, message) {
     var cookie = this._cliffhanger.invoke(async())
-    this._colleague.publish(this.reinstatementId, {
+    this.colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'publish',
         from: this.participantId,
@@ -448,7 +448,7 @@ Conference.prototype._broadcast = cadence(function (async, cancelable, method, m
         this._cancelable[reductionKey] = { cookie: cookie }
     }
     this._broadcasts.hold(reductionKey, { cookie: cookie }).release()
-    this._colleague.publish(this.reinstatementId, {
+    this.colleague.publish(this.reinstatementId, {
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'broadcast',
         reductionKey: reductionKey,
@@ -462,7 +462,7 @@ Conference.prototype._broadcast = cadence(function (async, cancelable, method, m
 Conference.prototype._reduce = cadence(function (async, cancelable, method, converanceId, message) {
     var participantId = this._participantIds[this.colleagueId]
     var reductionKey = method + '/' + converanceId
-    this._colleague.publish({
+    this.colleague.publish({
         namespace: 'bigeasy.compassion.colleague.conference',
         type: 'converge',
         reductionKey: reductionKey,
@@ -482,7 +482,7 @@ Conference.prototype._naturalized = cadence(function (async, responses, particip
     }
     console.error('>>>', 'naturalized!', participantId)
     if (this.participantId == participantId) {
-        this._colleague.naturalized()
+        this.colleague.naturalized()
 // TODO Mark and track naturalized.
 // TODO Do I need some sort of a leadership work queue? Kind of. Something that
 // begins and ends, so I can naturalize a member, then as a separate, cancelable

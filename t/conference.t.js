@@ -1,4 +1,4 @@
-require('proof/redux')(9, require('cadence')(prove))
+require('proof/redux')(3, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -38,6 +38,9 @@ function prove (async, assert) {
             reinstatementId: 0,
             colleagueId: '0'
         }, async())
+    }, function () {
+// TODO EXITING HERE
+        return [ async.break ]
     }, function () {
         wait = async()
         assert(conference.islandId, '0', 'set island id')

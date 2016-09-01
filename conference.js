@@ -33,6 +33,7 @@ function Conference (colleague, self) {
     this._cancelable = {}
     this._exiles = []
     this._operations = {}
+    this._setOperation('receive', '!properties', { object: this, method: '_setProperties' })
     this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
     this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
     this.colleague.messages.on('message', this.message.bind(this))
@@ -95,7 +96,7 @@ Conference.prototype._apply = cadence(function (async, qualifier, name, vargs) {
         operation.apply([], vargs.concact(async()))
     }
 })
-
+Error.stackTraceLimit = 14
 // TODO Should this be parallel with how ever many turnstiles?
 Conference.prototype._operate = cadence(function (async, message) {
     async([function () {
@@ -191,11 +192,12 @@ Conference.prototype._message = cadence(function (async, message) {
         // not know of another citizens immigration.
         var immigration = value.government.immigrate
         if (immigration) {
-// TODO Add immigrated to citizen properties
+// TODO Add immigrated to citizen properties.
 // TODO Put id in this object.
             this._immigrants.push(this._participantIds[immigration.id])
             this.properties[this._participantIds[immigration.id]] = value.properties[immigration.id]
             if (this.participantId == this._participantIds[immigration.id]) {
+// TODO PROPERTIES Get dem properties here!
                 this._operate({
                     qualifier: 'internal',
                     method: 'join',
@@ -341,19 +343,27 @@ Conference.prototype._checkTransitions = function () {
                 ]
             }, abend)
         } else if (this._immigrants.length != 0) {
-            this._transition = 'naturalize'
-            this._operate({
-                qualifier: 'internal',
-                method: 'immigrate',
-                vargs: [
-                    this._immigrants[0],
-                    this.properties[this._immigrants[0]],
-                    this.properties[this._immigrants[0]].immigrated
-                ]
-            }, abend)
+            this._immigrate(abend)
         }
     }
 }
+
+Conference.prototype._immigrate = cadence(function (async) {
+    this._transition = 'naturalize'
+    async(function () {
+        this._send(true, '!properties', this._immigrants[0], this.properties, async())
+    }, function () {
+        this._operate({
+            qualifier: 'internal',
+            method: 'immigrate',
+            vargs: [
+                this._immigrants[0],
+                this.properties[this._immigrants[0]],
+                this.properties[this._immigrants[0]].immigrated
+            ]
+        }, async())
+    })
+})
 
 Conference.prototype.send = cadence(function (async, method, colleagueId, message) {
     this._send(false, '.' + method, colleagueId, message, async())
@@ -478,6 +488,12 @@ Conference.prototype._reduce = cadence(function (async, cancelable, method, conv
     }, async())
 })
 
+// TODO Should probably invoke `join` as part of naturalization.
+Conference.prototype._setProperties = cadence(function (async, properties) {
+    this.properties = properties
+    return {}
+})
+
 Conference.prototype._naturalized = cadence(function (async, participantId) {
     assert(this._transtion == null || this._transition == participantId)
     this._transition = null
@@ -507,6 +523,7 @@ Conference.prototype._naturalized = cadence(function (async, participantId) {
 
 Conference.prototype._exiled = cadence(function (async, participantId) {
 // TODO Set `_transition` to `null` on collpase.
+    console.error('!!!', 'exiled!', participantId)
     assert(this._transtion == null || this._transition == participantId)
     this._transition = null
     this._immigrants = this._immigrants.filter(function (immigrantId) {

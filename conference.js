@@ -526,9 +526,6 @@ Conference.prototype._exiled = cadence(function (async, participantId) {
     console.error('!!!', 'exiled!', participantId)
     assert(this._transtion == null || this._transition == participantId)
     this._transition = null
-    this._immigrants = this._immigrants.filter(function (immigrantId) {
-        return immigrantId == participantId
-    })
     if (this._exiles.length != 0 && this._exiles[0].participantId == participantId) {
         this._exiles.shift()
     }

@@ -150,6 +150,7 @@ Conference.prototype._message = cadence(function (async, message) {
             var leader = value.government.majority[0]
 // TODO What is all this?
 // TODO Come back and think hard about about rejoining.
+            this.properties = {}
             this.properties[this._participantIds[leader]] = value.properties[leader]
             this.isLeader = true
             this._operate({

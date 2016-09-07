@@ -28,7 +28,7 @@
                             "operation":                    "1.2.x",
                             "magazine":                     "1.0.x",
                             "prolific.logger":              "2.0.x",
-                            "rescue":                       "2.2.x"
+                            "rescue":                       "3.0.x"
     },
     "devDependencies":
     {

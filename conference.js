@@ -96,7 +96,7 @@ Conference.prototype._apply = cadence(function (async, qualifier, name, vargs) {
         operation.apply([], vargs.concact(async()))
     }
 })
-Error.stackTraceLimit = 14
+
 // TODO Should this be parallel with how ever many turnstiles?
 Conference.prototype._operate = cadence(function (async, message) {
     async([function () {

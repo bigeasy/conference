@@ -1,6 +1,7 @@
 var abend = require('abend')
 
 var assert = require('assert')
+var util = require('util')
 
 var cadence = require('cadence')
 var logger = require('prolific.logger').createLogger('bigeasy.conference')
@@ -9,36 +10,73 @@ var interrupt = require('interrupt').createInterrupter('bigeasy.conference')
 var Operation = require('operation')
 
 var Cliffhanger = require('cliffhanger')
-var Cancelable = require('./cancelable')
+var Reactor = require('reactor')
 
 var Cache = require('magazine')
 
 var slice = [].slice
 
-function Conference (colleague, self) {
+function Conference (colleague, operations) {
     this.isLeader = false
-    this.islandId = null
-    this.reinstatementId = null
     this.colleagueId = colleague.colleagueId
+    this.islandName = colleague.islandName
+    this.islandId = null
+    this._enqueued = new Reactor({ object: this, method: '_onEnqueued' })
     this.participantId = null
     this._cliffhanger = new Cliffhanger
     this.colleague = colleague
-    this._self = self || null
     this.properties = {}
     this._participantIds = null
+    // Do I need two Magazines? What where reductions?
     this._broadcasts = new Cache().createMagazine()
     this._reductions = new Cache().createMagazine()
-    this._immigrants = []
-    this.cancelable = new Cancelable(this)
-    this._cancelable = {}
-    this._exiles = []
-    this._operations = {}
-    this._setOperation('receive', '!properties', { object: this, method: '_setProperties' })
-    this._setOperation('reduced', '!naturalize', { object: this, method: '_naturalized' })
-    this._setOperation('reduced', '!exile', { object: this, method: '_exiled' })
-    this.colleague.messages.on('message', this.message.bind(this))
-    this.colleague.messages.on('replay', this.replay.bind(this))
+    this._operations = operations
 }
+
+Conference.prototype.naturalized = function () {
+    this.colleague.naturalized()
+}
+
+// You went through a lot of iterations with event emitters and whatnot. This
+// has yet to settle. Not sure where everything lives in the stack. What is the
+// difference between the Kibitzer and the Colleague? Well, I have notions.
+
+// Thus the `EventEmitter` lives on in the Kibitzer, but a colleague consumer
+// has a duck typed interface. In fact, I believe Kibitzer should use Vestibule
+// instead of event emitter.
+
+// So, keep in mind that everything here is tightly bound. We're not going to be
+// spreading messages. Colleague is the network interface warpper. Conference is
+// the application programming interface. We have them thightly coupled, but
+// still pluggable.
+
+// Notification that a message an enqueued into the Kibiter. Reach right into
+// the Kibitzer to shift it.
+Conference.prototype.enqueued = function () {
+    this._enqueued.check()
+}
+
+// Respond an out of band request. If you want to return a status code you can
+// just throw the integer value.
+Conference.prototype.oob = cadence(function (async, name, post) {
+    if (!this.isLeader) throw 504
+    // TODO Maybe 404 if not found.
+    this._operate({ qualifier: 'request', method: '.' + name, vargs: [ post ] }, async())
+})
+
+Conference.prototype._onJoined = function (kibitzer) {
+    this.colleague.kibitzer.on('enqueued', this._enqueued.check.bind(this._enqueued))
+}
+
+Conference.prototype._onEnqueued = cadence(function (async) {
+    var loop = async(function () {
+        var entry = this.colleague.kibitzer.shift()
+        if (entry == null) {
+            return [ loop.break ]
+        }
+        this._dispatch(entry, async())
+    })()
+})
 
 Conference.prototype._createOperation = function (operation) {
     if (typeof operation == 'string') {
@@ -99,15 +137,197 @@ Conference.prototype._apply = cadence(function (async, qualifier, name, vargs) {
 
 // TODO Should this be parallel with how ever many turnstiles?
 Conference.prototype._operate = cadence(function (async, message) {
-    async([function () {
+//    async([function () {
         var operation = this._getOperation(message.qualifier, message.method)
         if (operation == null) {
             return null
         }
-        operation.apply([], message.vargs.concat(async()))
-    }, /^compassion.colleage.confer#cancelled$/m, function () {
-        return [ async.break ]
-    }])
+        operation.operation.apply([], message.vargs.concat(operation.atomic ? async() : abend))
+//    }, function (error) {
+//        console.log(error.stack)
+//    }])
+})
+
+Conference.prototype.ifNotReplaying = function (f, callback) {
+    if (!this.replaying) {
+        if (callback) {
+            f(callback)
+        } else {
+            f()
+        }
+    } else if (callback) {
+        callback()
+    }
+}
+
+Conference.prototype._dispatch = cadence(function (async, message) {
+    switch (message.type) {
+    case 'join':
+        this._join(message.entry, async())
+        break
+    case 'entry':
+        this._entry(message.entry, async())
+        break
+    }
+})
+
+Conference.prototype._join = cadence(function (async, entry) {
+    console.log('join >', entry)
+    this.colleagueId = this.colleague.colleagueId
+    this.islandId = this.colleague.kibitzer.legislator.islandId
+    this.islandName = this.colleague.kibitzer.legislator.islandName
+    this._generateParticipantIds(entry)
+    var bootstrapped = entry.promise == '1/0'
+    this._operate({
+        qualifier: 'internal',
+        method: 'join',
+        vargs: [ true, entry.properties[this.colleagueId] ]
+    }, async())
+})
+
+Conference.prototype._generateParticipantIds = function (entry) {
+    this._participantIds = {}
+    entry.government
+        .majority.concat(entry.government.minority)
+        .concat(entry.government.constituents)
+        .forEach(function (id) {
+            this._participantIds[id] = entry.properties[id].immigrated + ':' + id
+        }, this)
+    this.participantId = this._participantIds[this.colleagueId]
+}
+
+// TODO Setting a property, we only have log messages here, so that our
+// indication of what the properties are may be different, out of sync with what
+// the underlying paxos thinks they are, thus, properties are only for
+// bootstrapping.
+Conference.prototype._entry = cadence(function (async, entry) {
+    console.log('entry !>', entry)
+    if (entry.government != null) {
+    console.log('>', entry.properties)
+        this._generateParticipantIds(entry)
+        this.isLeader = entry.government.majority[0] == this.colleagueId
+        // TODO Set immigration on bootstrap.
+        if (entry.promise == '1/0') {
+            console.log(this.colleagueId)
+            entry.government.immigrate = { id: this.colleagueId }
+        }
+        var properties = entry.properties
+        if (entry.government.immigrate) {
+            this._operate({
+                qualifier: 'internal',
+                method: 'immigrate',
+                vargs: [ entry.government.immigrate.id, properties, entry.promise ]
+            }, async())
+        } else if (entry.government.exile) {
+            this._operate({
+                qualifier: 'internal',
+                method: 'exile',
+                vargs: [ entry.government.exile, properties, entry.promise ]
+            }, async())
+            delete this._participantIds[entry.government.exile]
+        }
+    } else {
+        var value = entry.value
+        // TODO In order to be truely "queued" versus atomic, each of these
+        // actions is going to need to be enqueued. We're going to need to know
+        // before hand if the operation is atomic or queued. If it is atomic we
+        // run the action here, if not we run it in a turnstile, but we need to
+        // run the whole action, we can't just give `abend` to the user
+        // function.
+        switch (value.type) {
+        case 'broadcast':
+            async(function () {
+                // TODO `_operate` versus `_operateIf`.
+                this._operate({
+                    qualifier: 'receive',
+                    method: value.method,
+                    vargs: [ value.request ]
+                }, async())
+            }, function (response) {
+                logger.info('broadcasted', {
+                    $request: value.reqeust,
+                    $response: response
+                })
+                this.colleague.publish({
+                    type: 'reduce',
+                    from: this.participantId,
+                    reductionKey: value.reductionKey,
+                    cookie: value.cookie,
+                    method: value.method,
+                    request: value.request,
+                    response: response
+                }, async())
+            })
+            break
+        // Tally our responses and if they match the number of participants,
+        // then invoke the reduction method.
+        case 'reduce':
+            var reduction = this._reductions.hold(value.reductionKey, {})
+            var complete = true
+            reduction.value[value.from] = value.response
+            for (var id in this._participantIds) {
+                console.log('checking!>', this._participantIds[id])
+                if (!(this._participantIds[id] in reduction.value)) {
+                    complete = false
+                    break
+                }
+            }
+            if (complete) {
+                reduction.remove()
+                var reduced = []
+                for (var participantId in reduction.value) {
+                    reduced.push({
+                        participantId: participantId,
+                        value: reduction.value[participantId]
+                    })
+                }
+                async(function () {
+                    this._operate({
+                        qualifier: 'reduced',
+                        method: value.method,
+                        vargs: [ value.request, reduced ]
+                    }, async())
+                }, function () {
+                    var cartridge = this._broadcasts.hold(value.reductionKey, null)
+                    if (cartridge.value != null) {
+                        this._cliffhanger.resolve(cartridge.value.cookie, [ null, reduced ])
+                    }
+                    // TODO Might leak? Use Cadence finally.
+                    cartridge.release()
+                })
+            } else {
+                reduction.release()
+            }
+            break
+        case 'send':
+            if (this.participantId == value.to) {
+                async(function () {
+                    this._operate({
+                        qualifier: 'receive',
+                        method: value.method,
+                        vargs: [ value.request ]
+                    }, async())
+                }, function (response) {
+                    this.colleague.publish(this.reinstatementId, {
+                        type: 'respond',
+                        to: value.from,
+                        response: response,
+                        cookie: value.cookie
+                    }, async())
+                })
+            }
+            break
+        case 'respond':
+            if (this.participantId == value.to) {
+                this._cliffhanger.resolve(value.cookie, [ null, value.response ])
+            }
+            break
+        }
+    }
+})
+
+Conference.prototype.outOfBand = cadence(function (async, name, post) {
+    this.colleague.outOfBand(name, post, async())
 })
 
 Conference.prototype._message = cadence(function (async, message) {
@@ -370,8 +590,23 @@ Conference.prototype.send = cadence(function (async, method, colleagueId, messag
     this._send(false, '.' + method, colleagueId, message, async())
 })
 
-Conference.prototype.broadcast = cadence(function (async, method, message) {
-    this._broadcast(false, '.' + method, message, async())
+Conference.prototype.broadcast = function (method, message, callback) {
+    this._broadcast(method, message, callback || abend)
+}
+
+Conference.prototype._broadcast = cadence(function (async, method, message) {
+    var cookie = this._cliffhanger.invoke(async())
+    var participantId = this._participantIds[this.colleagueId]
+    var reductionKey = method + '/' + participantId + '/' + cookie
+    this._broadcasts.hold(reductionKey, { cookie: cookie }).release()
+    this.colleague.publish({
+        namespace: 'conference',
+        type: 'broadcast',
+        reductionKey: reductionKey,
+        cookie: cookie,
+        method: '.' + method,
+        request: message
+    }, async())
 })
 
 Conference.prototype.reduce = cadence(function (async, method, colleagueId, message) {
@@ -455,25 +690,6 @@ Conference.prototype.publish = cadence(function (async, method, message) {
     }, async())
 })
 
-Conference.prototype._broadcast = cadence(function (async, cancelable, method, message) {
-    var cookie = this._cliffhanger.invoke(async())
-    var participantId = this._participantIds[this.colleagueId]
-    var reductionKey = method + '/' + participantId + '/' + cookie
-    if (cancelable) {
-        this._cancelable[reductionKey] = { cookie: cookie }
-    }
-    this._broadcasts.hold(reductionKey, { cookie: cookie }).release()
-    this.colleague.publish(this.reinstatementId, {
-        namespace: 'bigeasy.compassion.colleague.conference',
-        type: 'broadcast',
-        reductionKey: reductionKey,
-        cancelable: cancelable,
-        cookie: cookie,
-        method: method,
-        request: message
-    }, async())
-})
-
 Conference.prototype._reduce = cadence(function (async, cancelable, method, converanceId, message) {
     var participantId = this._participantIds[this.colleagueId]
     var reductionKey = method + '/' + converanceId
@@ -549,4 +765,74 @@ Conference.prototype._cancel = function () {
     this._cancelable = {}
 }
 
-module.exports = Conference
+function Queued (operations, object) {
+    this._atomic = false
+    this._operations = operations
+    this._object = object
+}
+
+Queued.prototype.join = function (operation) {
+    operation || (operation = 'join')
+    this._setOperation(this._atomic, 'internal', 'join', operation)
+}
+
+Queued.prototype.immigrate = function (operation) {
+    operation || (operation = 'immigrate')
+    this._setOperation(this._atomic, 'internal', 'immigrate', operation)
+}
+
+Queued.prototype.exile = function (operation) {
+    operation || (operation = 'exile')
+    this._setOperation(this._atomic, 'internal', 'exile', operation)
+}
+
+Queued.prototype.receive = function (name, operation) {
+    operation || (operation = name)
+    this._setOperation(this._atomic, 'receive', '.' + name, operation)
+}
+
+Queued.prototype.reduced = function (name, operation) {
+    operation || (operation = name)
+    this._setOperation(this._atomic, 'reduced', '.' + name, operation)
+}
+
+Queued.prototype._setOperation = function (atomic, qualifier, name, operation) {
+    var key = qualifier + ':' + name
+    this._operations[key] = {
+        atomic: atomic,
+        operation: this._createOperation(operation)
+    }
+}
+
+Queued.prototype._createOperation = function (operation) {
+    if (typeof operation == 'string') {
+        assert(this._object, 'object cannot be null')
+        operation = { object: this._object, method: operation }
+    }
+    return new Operation(operation)
+}
+
+function Atomic (operations, object) {
+    Queued.call(this, operations, object)
+    this._atomic = true
+}
+util.inherits(Atomic, Queued)
+
+Atomic.prototype.request = function (name, operation) {
+    operation || (operation = name)
+    this._setOperation(this._atomic, 'request', '.' + name, operation)
+}
+
+function NewConstructor (object) {
+    this._operations = {}
+    this.atomic = new Atomic(this._operations, object)
+    this.queued = new Queued(this._operations, object)
+}
+
+NewConstructor.prototype.newConference = function (colleague) {
+    return new Conference(colleague, this._operations)
+}
+
+exports.newConference = function (object) {
+    return new NewConstructor(object)
+}

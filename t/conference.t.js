@@ -1,6 +1,8 @@
-require('proof/redux')(3, require('cadence')(prove))
+require('proof/redux')(1, require('cadence')(prove))
 
 function prove (async, assert) {
+    assert(require('..'), 'require')
+    return
     var cadence = require('cadence')
     var Conference = require('..')
     var events = require('events')

@@ -4,8 +4,8 @@ var assert = require('assert')
 var util = require('util')
 
 var cadence = require('cadence')
-var logger = require('prolific.logger').createLogger('bigeasy.conference')
-var interrupt = require('interrupt').createInterrupter('bigeasy.conference')
+var logger = require('prolific.logger').createLogger('conference')
+var interrupt = require('interrupt').createInterrupter('conference')
 
 var Operation = require('operation')
 

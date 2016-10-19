@@ -18,6 +18,7 @@ var slice = [].slice
 
 function Conference (colleague, operations) {
     this.isLeader = false
+    this.replaying = colleague.replaying
     this.colleagueId = colleague.colleagueId
     this.islandName = colleague.islandName
     this.islandId = null
@@ -63,10 +64,6 @@ Conference.prototype.oob = cadence(function (async, name, post) {
     // TODO Maybe 404 if not found.
     this._operate({ qualifier: 'request', method: '.' + name, vargs: [ post ] }, async())
 })
-
-Conference.prototype._onJoined = function (kibitzer) {
-    this.colleague.kibitzer.on('enqueued', this._enqueued.check.bind(this._enqueued))
-}
 
 Conference.prototype._onEnqueued = cadence(function (async) {
     var loop = async(function () {

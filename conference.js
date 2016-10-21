@@ -627,21 +627,15 @@ Conference.prototype._enqueue = function (message, callback) {
     }
 }
 
-Conference.prototype.replay = function (entry) {
-    if (entry.qualifier == 'bigeasy.conference' && entry.name == 'replay') {
-        var operation = this._getOperation('operate', '.' + entry.method)
-        if (operation == null) {
-            return null
-        }
-        operation.apply(entry.vargs)
+Conference.prototype.replay = function (name, message) {
+    var operation = this._getOperation('operate', '.' + name)
+    if (operation != null) {
+        operation.operation.apply([], [ message ])
     }
 }
 
-Conference.prototype.record = function () {
-    var vargs = slice.call(arguments)
-    var method = vargs.shift()
-    logger.info('replay', { method: method, vargs: vargs })
-    this._operate({ qualifier: 'operate', method: '.' + method, vargs: vargs }, abend)
+Conference.prototype.record = function (name, message) {
+    this.colleague.record(name, message)
 }
 
 Conference.prototype._pause = cadence(function (async, colleagueId) {
@@ -818,6 +812,11 @@ util.inherits(Atomic, Queued)
 Atomic.prototype.request = function (name, operation) {
     operation || (operation = name)
     this._setOperation(this._atomic, 'request', '.' + name, operation)
+}
+
+Atomic.prototype.operate = function (name, operation) {
+    operation || (operation = name)
+    this._setOperation(this._atomic, 'operate', '.' + name, operation)
 }
 
 function NewConstructor (object) {

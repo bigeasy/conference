@@ -10,7 +10,6 @@ var interrupt = require('interrupt').createInterrupter('conference')
 var Operation = require('operation')
 
 var Cliffhanger = require('cliffhanger')
-var Reactor = require('reactor')
 
 var Cache = require('magazine')
 
@@ -22,7 +21,6 @@ function Conference (colleague, operations) {
     this.colleagueId = colleague.colleagueId
     this.islandName = colleague.islandName
     this.islandId = null
-    this._enqueued = new Reactor({ object: this, method: '_onEnqueued' })
     this.participantId = null
     this._cliffhanger = new Cliffhanger
     this.colleague = colleague

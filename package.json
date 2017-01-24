@@ -24,9 +24,9 @@
     {
                             "abend":                        "1.0.x",
                             "cadence":                      "1.0.x",
-                            "cliffhanger":                  "1.2.x",
                             "interrupt":                    "2.1.x",
-                            "magazine":                     "1.0.x",
+                            "monotonic":                    "2.0.x",
+                            "nascent.coalesce":             "0.0.0",
                             "operation":                    "1.2.x",
                             "prolific.logger":              "1.0.x",
                             "rescue":                       "2.2.x"

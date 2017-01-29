@@ -13,7 +13,35 @@
       <h1>Coalesce</h1>
       <!-- todo: code font is too small for body text font-->
     </div>
-    <div class="unit description markdown include" data-file="index.md"><p>Conduit</p>
+    <div class="unit description markdown include" data-file="index.md"><p>Conference</p>
+<pre><code class="lang-javascript"><span class="hljs-keyword">var</span> Conference = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;conference&apos;</span>)
+<span class="hljs-keyword">var</span> Colleague = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;colleague&apos;</span>)
+
+<span class="hljs-keyword">var</span> reactor = {
+    <span class="hljs-attr">join</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">conference, colleague, callback</span>) </span>{
+    },
+    <span class="hljs-attr">immigrate</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">conference, id, callback</span>) </span>{
+    },
+    <span class="hljs-attr">exile</span>: <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">conference, id, callback</span>) </span>{
+    }
+}
+
+<span class="hljs-keyword">var</span> conference = <span class="hljs-keyword">new</span> Conference(reactor, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">define</span>) </span>{
+    define.join()
+    define.immigrate()
+    define.exile()
+}))
+
+<span class="hljs-keyword">var</span> Colleague = <span class="hljs-keyword">new</span> Colleague(process)
+
+colleague.spigot.pump(<span class="hljs-keyword">new</span> Spigot.Responder(conference.responder))
+
+colleague.listen(functionn (error) {
+    <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">throw</span> error
+})
+</code></pre>
+<p>Some thoughts on construction above. Do not have a good idea of how to create an
+example of usage.</p>
 </div>
   </div>
   <!-- todo: move into an edify plugin-->

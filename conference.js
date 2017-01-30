@@ -106,17 +106,11 @@ Conference.prototype._nextCookie = function () {
     return this._cookie = Monotonic.increment(this._cookie, 0)
 }
 
-Conference.prototype.ifNotReplaying = function (f, callback) {
+Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
     if (!this.replaying) {
-        if (callback) {
-            f(callback)
-        } else {
-            f()
-        }
-    } else if (callback) {
-        callback()
+        new Operation(operation).apply([ async() ])
     }
-}
+})
 
 Conference.prototype.naturalized = function () {
     this._colleague.naturalized()
@@ -328,14 +322,16 @@ Conference.prototype.record = cadence(function (async, method, message) {
         method: method,
         body: message
     }, async())
+    this.replay({
+        module: 'conference',
+        method: method,
+        body: message
+    }, async())
 })
 
-Conference.prototype.replay = function (name, message) {
-    var operation = this._getOperation('catalog', name)
-    if (operation != null) {
-        operation.operation.apply([], [ message ])
-    }
-}
+Conference.prototype.replay = cadence(function (async, record) {
+    this._operate('catalog', record.method, [ record.body ], async())
+})
 
 // Honoring back pressure here, but I've not considered if back pressure is
 // going to cause deadlock. I'm sure it can. What happens when the queues

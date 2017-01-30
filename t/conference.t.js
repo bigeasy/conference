@@ -1,4 +1,4 @@
-require('proof/redux')(24, require('cadence')(prove))
+require('proof/redux')(25, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -9,8 +9,11 @@ function prove (async, assert) {
             })
             conference.ifNotReplaying(cadence(function (async) {
                 assert(true, 'if not replaying async')
-                conference.record('record', { body: 1 }, async())
+                conference.record('catalog', 1, async())
             }), async())
+        }),
+        catalog: cadence(function (async, value) {
+            assert(value, 1, 'cataloged')
         }),
         request: cadence(function (async, value) {
             return value + 1
@@ -133,8 +136,8 @@ function prove (async, assert) {
         record: cadence(function (async, envelope) {
             assert(envelope, {
                 module: 'conference',
-                method: 'record',
-                body: { body: 1 }
+                method: 'catalog',
+                body: 1
             }, 'record')
         }),
         kibitzer: {
@@ -331,16 +334,17 @@ function prove (async, assert) {
         }, async())
     }, function () {
         var reactor = {
-            immigrate: cadence(function (async) {}),
+            join: cadence(function (async) {
+                conference.ifNotReplaying(function (callback) {
+                    throw new Error('should not be replaying')
+                }, async())
+            }),
             double: cadence(function (async, request) {
                 return request * 2
             })
         }
         var colleague = {
-            published: 0,
-            naturalized: function () {
-                assert(true, 'naturalized')
-            },
+            replaying: true,
             publish: function (message, callback) {
                 published.push(message)
                 callback()
@@ -366,13 +370,6 @@ function prove (async, assert) {
                     }
                 }
             }),
-            record: cadence(function (async, envelope) {
-                assert(envelope, {
-                    module: 'conference',
-                    method: 'record',
-                    body: { body: 1 }
-                }, 'record')
-            }),
             kibitzer: {
                 legislator: { id: '3' }
             }
@@ -396,6 +393,7 @@ function prove (async, assert) {
             }
         }
         conference = new Conference(reactor, function (constructor) {
+            constructor.join()
             constructor.receive('double')
             constructor.reduced('double', 'doubled')
         })

@@ -151,6 +151,10 @@ function Conference (object, constructor) {
     constructor(new Constructor(object, this._operations = {}))
 }
 
+// An ever increasing identify to adorn our broadcasts so that it's key will be
+// unique when we combine our immigration promise with the cookie.
+
+//
 Conference.prototype._nextCookie = function () {
     return this._cookie = Monotonic.increment(this._cookie, 0)
 }

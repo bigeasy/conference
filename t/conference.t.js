@@ -1,4 +1,4 @@
-require('proof/redux')(25, require('cadence')(prove))
+require('proof/redux')(23, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -76,94 +76,53 @@ function prove (async, assert) {
             }
         }
     }
-    var outOfBands = [{
-        expected: {
-            to: '1',
-            body: {
-                module: 'conference',
-                type: 'request',
-                body: {
-                    method: 'request',
-                    body: 1
-                }
-            }
-        },
-        message: 'out of band'
-    }, {
-        expected: {
-            to: '1',
-            body: {
-                module: 'conference',
-                type: 'request',
-                body: {
-                    method: '_request',
-                    body: 1
-                }
-            }
-        },
-        message: 'out of band not found request'
-    }, {
-        expected: {
-            to: '1',
-            body: {
-                module: 'conference',
-                type: 'backlog',
-                body: {
-                    promise: '2/0'
-                }
-            }
-        },
-        message: 'out of band not found request'
-    }]
-    var published = []
-    var colleague = {
-        published: 0,
-        naturalized: function () {
-            assert(true, 'naturalized')
-        },
-        publish: function (message, callback) {
-            published.push(message)
-            callback()
-        },
-        outOfBand: cadence(function (async, to, body) {
-            var test = outOfBands.shift()
-            assert({
-                to: to,
-                body: body
-            }, test.expected, test.message)
-            conference.responder.outOfBand(body, async())
-        }),
-        record: cadence(function (async, envelope) {
-            assert(envelope, {
-                module: 'conference',
-                method: 'catalog',
-                body: 1
-            }, 'record')
-        }),
-        kibitzer: {
-            legislator: { id: '1' }
-        }
-    }
+    var requests = conference.spigot.requests.shifter()
+    var dispatcher = conference._dispatcher
     async(function () {
-        conference.responder.join(colleague, immigrate, async())
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'join',
+            body: {
+                id: '1',
+                replaying: false
+            }
+        }, async())
     }, function () {
-        conference.responder.entry(immigrate, async())
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'record',
+            body: { method: 'catalog', body: 1 }
+        }, 'recorded')
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
+            body: immigrate
+        }, async())
     }, function () {
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '2/0',
-            government: true,
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'naturalized',
+            body: null
+        }, 'recorded')
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
                 module: 'paxos',
                 promise: '2/0',
-                majority: [ '1' ],
-                minority: [],
-                constituents: [ '2' ],
-                immigrant: { id: '2' },
-                properties: { '1': {}, '2': {} },
-                immigrated: {
-                    id: { '1/0': '1', '2/0': '2' },
-                    promise: { '1': '1/0', '2': '2/0' }
+                government: true,
+                body: {
+                    module: 'paxos',
+                    promise: '2/0',
+                    majority: [ '1' ],
+                    minority: [],
+                    constituents: [ '2' ],
+                    immigrant: { id: '2' },
+                    properties: { '1': {}, '2': {} },
+                    immigrated: {
+                        id: { '1/0': '1', '2/0': '2' },
+                        promise: { '1': '1/0', '2': '2/0' }
+                    }
                 }
             }
         }, async())
@@ -181,60 +140,85 @@ function prove (async, assert) {
                 promise: { '1': '1/0', '2': '2/0' }
             }
         }, 'constituent added')
-        conference.responder.outOfBand({
+        dispatcher.request({
             module: 'conference',
             type: 'backlog',
             from: '2/0'
         }, async())
     }, function (broadcasts) {
         assert(broadcasts, {}, 'created backlog')
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '2/1',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'naturalized',
-                from: '2/0'
+                module: 'paxos',
+                promise: '2/1',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'naturalized',
+                    from: '2/0'
+                }
             }
         }, async())
     }, function () {
-        conference.responder.outOfBand({
+        dispatcher.request({
             module: 'conference',
             type: 'backlog',
-            from: '2/0'
+            from: '2/0',
+            body: null
         }, async())
     }, function (broadcasts) {
         assert(broadcasts, null, 'backlog not found')
-        conference.outOfBand(conference.government.majority[0], 'request', 1, async())
+        dispatcher.request({
+            module: 'conference',
+            type: 'request',
+            from: '2/0',
+            body: {
+                method: 'request',
+                body: 1
+            }
+        }, async())
     }, function (response) {
         assert(response, 2, 'out of band response')
-        conference.outOfBand(conference.government.majority[0], '_request', 1, async())
+        dispatcher.request({
+            module: 'conference',
+            type: 'request',
+            from: '2/0',
+            body: {
+                method: '_request',
+                body: 1
+            }
+        }, async())
     }, function (response) {
         assert(response, null, 'out of band not found')
-        conference.broadcast('message', 1, async())
+        conference.broadcast('message', 1)
     }, function () {
-        assert(published.shift(), {
+        assert(requests.shift(), {
             module: 'conference',
             type: 'broadcast',
             key: 'message[1/0](1)',
             method: 'message',
             body: 1
         }, 'published')
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '2/2',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'broadcast',
-                key: 'message[1/0](1)',
-                method: 'message',
-                body: 1
+                module: 'paxos',
+                promise: '2/2',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'broadcast',
+                    key: 'message[1/0](1)',
+                    method: 'message',
+                    body: 1
+                }
             }
         }, async())
     }, function () {
-        assert(published.shift(), {
+        assert(requests.shift(), {
             module: 'conference',
             type: 'reduce',
             from: '1/0',
@@ -242,30 +226,38 @@ function prove (async, assert) {
             method: 'message',
             body: 0
         }, 'first reduction published')
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '2/3',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'reduce',
-                from: '1/0',
-                key: 'message[1/0](1)',
-                method: 'message',
-                body: 7
+                module: 'paxos',
+                promise: '2/3',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'reduce',
+                    from: '1/0',
+                    key: 'message[1/0](1)',
+                    method: 'message',
+                    body: 7
+                }
             }
         }, async())
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '2/4',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'reduce',
-                from: '2/0',
-                key: 'message[1/0](1)',
-                method: 'message',
-                body: 5
+                module: 'paxos',
+                promise: '2/4',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'reduce',
+                    from: '2/0',
+                    key: 'message[1/0](1)',
+                    method: 'message',
+                    body: 5
+                }
             }
         }, async())
     }, function () {
@@ -279,20 +271,24 @@ function prove (async, assert) {
             }, 'exile reduced')
         })
         // This time we're going to broadcast and then exile.
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '3/3',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'broadcast',
-                key: 'message[1/0](2)',
-                method: 'message',
-                body: 1
+                module: 'paxos',
+                promise: '3/3',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'broadcast',
+                    key: 'message[1/0](2)',
+                    method: 'message',
+                    body: 1
+                }
             }
         }, async())
     }, function () {
-        assert(published.shift(), {
+        assert(requests.shift(), {
             module: 'conference',
             type: 'reduce',
             from: '1/0',
@@ -300,35 +296,43 @@ function prove (async, assert) {
             method: 'message',
             body: 0
         }, 'broadcast again')
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '3/4',
-            government: false,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
-                module: 'conference',
-                type: 'reduce',
-                from: '1/0',
-                key: 'message[1/0](2)',
-                method: 'message',
-                body: 0
+                module: 'paxos',
+                promise: '3/4',
+                government: false,
+                body: {
+                    module: 'conference',
+                    type: 'reduce',
+                    from: '1/0',
+                    key: 'message[1/0](2)',
+                    method: 'message',
+                    body: 0
+                }
             }
         }, async())
     }, function () {
-        conference.responder.entry({
-            module: 'paxos',
-            promise: '3/0',
-            government: true,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
                 module: 'paxos',
                 promise: '3/0',
-                majority: [ '1' ],
-                minority: [],
-                constituents: [ ],
-                exile: { id: '2', promise: '2/0', properties: {} },
-                properties: { '1': {}, '2': {} },
-                immigrated: {
-                    id: { '1/0': '1' },
-                    promise: { '1': '1/0' }
+                government: true,
+                body: {
+                    module: 'paxos',
+                    promise: '3/0',
+                    majority: [ '1' ],
+                    minority: [],
+                    constituents: [ ],
+                    exile: { id: '2', promise: '2/0', properties: {} },
+                    properties: { '1': {}, '2': {} },
+                    immigrated: {
+                        id: { '1/0': '1' },
+                        promise: { '1': '1/0' }
+                    }
                 }
             }
         }, async())
@@ -342,37 +346,6 @@ function prove (async, assert) {
             double: cadence(function (async, request) {
                 return request * 2
             })
-        }
-        var colleague = {
-            replaying: true,
-            publish: function (message, callback) {
-                published.push(message)
-                callback()
-            },
-            outOfBand: cadence(function (async, to, body) {
-                assert({
-                    to: to,
-                    body: body
-                }, {
-                    to: '1',
-                    body: {
-                        module: 'conference',
-                        type: 'backlog',
-                        from: '3/0'
-                    }
-                }, 'out of band backlog request')
-                return {
-                    'double[1/0](1)': {
-                        key: 'double[1/0](1)',
-                        request: 1,
-                        method: 'double',
-                        responses: { '1/0': 4 }
-                    }
-                }
-            }),
-            kibitzer: {
-                legislator: { id: '3' }
-            }
         }
         immigrate = {
             module: 'paxos',
@@ -397,11 +370,51 @@ function prove (async, assert) {
             constructor.receive('double')
             constructor.reduced('double', 'doubled')
         })
-        conference.responder.join(colleague, immigrate, async())
+        requests = conference.spigot.requests.shifter()
+        dispatcher = conference._dispatcher
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'join',
+            body: {
+                id: '3',
+                replaying: true
+            }
+        }, async())
     }, function () {
-        conference.responder.entry(immigrate, async())
+        dispatcher.fromBasin({
+            module: 'conference',
+            method: 'entry',
+            body: immigrate
+        }, async())
+        assert(requests.shift(), {
+            module: 'conduit',
+            to: 'conference',
+            from: 'conference',
+            cookie: '1',
+            body: {
+                module: 'conference',
+                method: 'backlog',
+                to: '1',
+                from: '3/0',
+                body: null
+            }
+        }, 'out of band backlog request')
+        conference.spigot.responses.push({
+            module: 'conduit',
+            to: 'conference',
+            from: 'conference',
+            cookie: '1',
+            body: {
+                'double[1/0](1)': {
+                    key: 'double[1/0](1)',
+                    request: 1,
+                    method: 'double',
+                    responses: { '1/0': 4 }
+                }
+            }
+        })
     }, function () {
-        assert(published.shift(), {
+        assert(requests.shift(), {
             module: 'conference',
             type: 'reduce',
             from: '3/0',
@@ -409,27 +422,30 @@ function prove (async, assert) {
             method: 'double',
             body: 2
         }, 'broadcast backlog')
-        assert(published.shift(), {
+        assert(requests.shift(), {
             module: 'conference',
-            type: 'naturalized',
-            from: '3/0',
+            method: 'naturalized',
             body: null
         }, 'naturalized')
     }, function () {
-        conference._entry({
-            module: 'paxos',
-            promise: '4/0',
-            government: true,
+        dispatcher.fromBasin({
+            module: 'colleague',
+            method: 'entry',
             body: {
                 module: 'paxos',
                 promise: '4/0',
-                majority: [ '1', '2' ],
-                minority: [ '3' ],
-                constituents: [],
-                properties: { '1': {}, '2': {}, '3': {} },
-                immigrated: {
-                    id: { '1/0': '1', '2/0': '2', '3/0': '3' },
-                    promise: { '1': '1/0', '2': '2/0', '3': '3/0' }
+                government: true,
+                body: {
+                    module: 'paxos',
+                    promise: '4/0',
+                    majority: [ '1', '2' ],
+                    minority: [ '3' ],
+                    constituents: [],
+                    properties: { '1': {}, '2': {}, '3': {} },
+                    immigrated: {
+                        id: { '1/0': '1', '2/0': '2', '3/0': '3' },
+                        promise: { '1': '1/0', '2': '2/0', '3': '3/0' }
+                    }
                 }
             }
         }, async())

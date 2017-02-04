@@ -1,18 +1,50 @@
-var abend = require('abend')
-
+// Common utilities.
 var assert = require('assert')
 var util = require('util')
+
+// Control-flow utilities.
+var abend = require('abend')
+var cadence = require('cadence')
+
 
 var Monotonic = require('monotonic').asString
 
 var coalesce = require('nascent.coalesce')
 
-var cadence = require('cadence')
 var logger = require('prolific.logger').createLogger('conference')
 var interrupt = require('interrupt').createInterrupter('conference')
 
 var Operation = require('operation')
 
+// Invoke round trip requests into an evented message queue.
+var Requester = require('conduit/requester')
+
+// Emit events into an evented message queue.
+var Spigot = require('conduit/spigot')
+
+// Respond to requests from an evented message queue.
+var Responder = require('conduit/responder')
+
+// Consume events from an evented message queue.
+var Basin = require('conduit/basin')
+
+// The patterns below take my back to my efforts to create immutable
+// constructors when immutability was all the rage in Java-land. It would have
+// pained me to create an object that continues to initialize the object after
+// the constructor, but at the same time I'd have no real problem with reponding
+// the headers in these streams. It was something that I abandoned after having
+// spend some time with it, with rationale that I cannot remember. I can only
+// remember the ratoinale that led me to adopt it.
+//
+// It did lead me to consider the folly of ORM, though.
+
+// A `Responder` class specific to the Conference that will respond to
+// directives from a Colleague.
+
+// Update: Actually, passing in the builder function feels somewhat immutable,
+// about as immutable as JavaScript is going to get.
+
+//
 function Constructor (object, operations) {
     this._object = object
     this._operations = operations
@@ -54,40 +86,31 @@ Constructor.prototype.catalog = function (name, method) {
     this._setOperation('catalog', name, coalesce(name, method))
 }
 
-// The patterns below take my back to my efforts to create immutable
-// constructors when immutability was all the rage in Java-land. It would have
-// pained me to create an object that continues to initialize the object after
-// the constructor, but at the same time I'd have no real problem with reponding
-// the headers in these streams. It was something that I abandoned after having
-// spend some time with it, with rationale that I cannot remember. I can only
-// remember the ratoinale that led me to adopt it.
-//
-// It did lead me to consider the folly of ORM, though.
-
-// A `Responder` class specific to the Conference that will respond to
-// directives from a Colleague.
-
-//
-function Responder (conference) {
+function Dispatcher (conference) {
     this._conference = conference
 }
 
-Responder.prototype.join = function (colleague, entry, callback) {
-    this._conference._join(colleague, entry, callback)
+Dispatcher.prototype.request = function (envelope, callback) {
+    this._conference._outOfBand(envelope, callback)
 }
 
-Responder.prototype.entry = cadence(function (async, envelope) {
-    this._conference._entry(envelope, async())
-})
-
-Responder.prototype.outOfBand = cadence(function (async, envelope) {
-    this._conference._outOfBand(envelope, async())
-})
+Dispatcher.prototype.fromBasin = function (envelope, callback) {
+    switch (envelope.method) {
+    case 'join':
+        this._conference._join(envelope.body, callback)
+        break
+    case 'entry':
+        this._conference._entry(envelope.body, callback)
+        break
+    case 'replay':
+        this._conference._replay(envelope.body, callback)
+        break
+    }
+}
 
 function Conference (object, constructor) {
     this.isLeader = false
     this.colleague = null
-    this.responder = new Responder(this)
     this.replaying = false
     this.id = null
     this.islandName = null
@@ -98,6 +121,32 @@ function Conference (object, constructor) {
     this._participantIds = null
     this._broadcasts = {}
     this._backlogs = {}
+
+    // Currently exposed for testing, but feeling that these method should be
+    // public for general testing, with one wrapper that hooks it up to the
+    // colleague's streams and another that lets you send mock events.
+    this._dispatcher = new Dispatcher(this)
+
+    // Events go first through a `Responder` which will invoke our out of band
+    // method and return the result. If the message is not an out of band
+    // requests it is a message that does not expect a response. It will flow
+    // into the `Basin` where we'll dispatch it and send to response.
+    var responder = new Responder(this._dispatcher, 'conference')
+    var basin = new Basin(this._dispatcher)
+
+    responder.spigot.emptyInto(basin)
+
+    // The basin into which events flow form the network.
+    this.basin = responder.basin
+
+    // Round trip events used to perform requests for out-of-band data.
+    this._requester = new Requester('conference')
+    this.spigot = this._requester.spigot
+
+    // An internal spigot that flows thorugh the requester used to publish and
+    // record.
+    this._spigot = new Spigot(this._dispatcher)
+    this._spigot.emptyInto(this._requester.basin)
 
     constructor(new Constructor(object, this._operations = {}))
 }
@@ -112,8 +161,16 @@ Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
     }
 })
 
+// TODO Why sometimes wait? I don't want to wait on naturalized. I'm assuming
+// that we're not going to publish much, and that we're not going to wait for
+// the queue to empty. We don't have back-pressure and if we did have
+// back-pressure, we would have deadlock. We should push, not enqueue.
 Conference.prototype.naturalized = function () {
-    this._colleague.naturalized()
+    this._spigot.requests.push({
+        module: 'conference',
+        method: 'naturalized',
+        body: null
+    })
 }
 
 Conference.prototype.getProperties = function (id) {
@@ -150,23 +207,21 @@ Conference.prototype._operate = cadence(function (async, qualifier, method, varg
     operation.apply(vargs.concat(async()))
 })
 
-Conference.prototype._join = cadence(function (async, colleague, entry) {
-    this._colleague = colleague
-    this.replaying = colleague.replaying
-    this.id = colleague.kibitzer.legislator.id
-    this.islandId = colleague.kibitzer.legislator.islandId
-    this.islandName = colleague.kibitzer.legislator.islandName
-    this.government = entry.body
+Conference.prototype._join = cadence(function (async, join) {
+    this.replaying = join.replaying
+    this.id = join.id
     this._operate('internal', 'join', [ this ], async())
 })
 
 Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
-        this._colleague.outOfBand(this.government.majority[0], {
+        this._requester.request('conference', {
             module: 'conference',
-            type: 'backlog',
-            from: this.government.promise
-        }, async())
+            method: 'backlog',
+            to: this.government.majority[0],
+            from: this.government.promise,
+            body: null
+        }, 'conference', async())
     }, function (broadcasts) {
         var entries = []
         for (var key in broadcasts) {
@@ -197,12 +252,12 @@ Conference.prototype._getBacklog = cadence(function (async) {
             this._entry(entry, async())
         })(entries)
     }, function () {
-        this._colleague.publish({
+        // TODO Probably not a bad idea, but what was I thinking?
+        this._spigot.requests.push({
             module: 'conference',
-            type: 'naturalized',
-            from: this.government.promise,
+            method: 'naturalized',
             body: null
-        }, async())
+        })
     })
 })
 
@@ -256,14 +311,14 @@ Conference.prototype._entry = cadence(function (async, entry) {
             async(function () {
                 this._operate('receive', envelope.method, [ envelope.body ], async())
             }, function (response) {
-                this._colleague.publish({
+                this._spigot.requests.push({
                     module: 'conference',
                     type: 'reduce',
                     from: this.government.immigrated.promise[this.id],
                     key: envelope.key,
                     method: envelope.method,
                     body: response
-                }, async())
+                })
             })
             break
         // Tally our responses and if they match the number of participants,
@@ -305,6 +360,8 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
     }
 })
 
+// TODO Save welcomes, or introductions, and have them expire when the welcome
+// expires, and maybe that is the entirety of out-of-band.
 Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
     this._colleague.outOfBand(to, {
         module: 'conference',
@@ -316,20 +373,21 @@ Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
     }, async())
 })
 
+// Note that we don't wait on enqueuing the request, but we do wait on replay.
+// Replay is independent of the consensus algorithm.
 Conference.prototype.record = cadence(function (async, method, message) {
-    this._colleague.record({
+    this._spigot.requests.push({
         module: 'conference',
-        method: method,
-        body: message
-    }, async())
-    this.replay({
-        module: 'conference',
-        method: method,
-        body: message
-    }, async())
+        method: 'record',
+        body: {
+            method: method,
+            body: message
+        }
+    })
+    this._replay({ method: method, body: message }, async())
 })
 
-Conference.prototype.replay = cadence(function (async, record) {
+Conference.prototype._replay = cadence(function (async, record) {
     this._operate('catalog', record.method, [ record.body ], async())
 })
 
@@ -347,17 +405,17 @@ Conference.prototype.replay = cadence(function (async, record) {
 // that error will crash this participant.
 
 //
-Conference.prototype.broadcast = cadence(function (async, method, message) {
+Conference.prototype.broadcast = function (method, message) {
     var cookie = this._nextCookie()
     var uniqueId = this.government.immigrated.promise[this.id]
     var key = method + '[' + uniqueId + '](' + cookie + ')'
-    this._colleague.publish({
+    this._spigot.requests.push({
         module: 'conference',
         type: 'broadcast',
         key: key,
         method: method,
         body: message
-    }, async())
-})
+    })
+}
 
 module.exports = Conference

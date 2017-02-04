@@ -43,7 +43,7 @@ export CHROME_REFRESH
 PATH  := "$(PATH):$(PWD)/node_modules/.bin"
 SHELL := env PATH=$(PATH) /bin/sh
 
-javascript := $(wildcard ../*.js)
+javascript := $(filter-out ../_%, $(wildcard ../*.js))
 sources := $(patsubst ../%.js,source/%.js.js,$(javascript))
 docco := $(patsubst source/%.js.js,docco/%.js.html,$(sources))
 outputs := $(docco) css/style.css index.html
@@ -78,9 +78,10 @@ css/%.css: css/%.less node_modules/.bin/lessc
 	node_modules/.bin/lessc $< > $@ || rm -f $@
 
 source/%.js.js: ../%.js
+	mkdir -p source
 	cp $< $@
 
-docco/%.js.html: source/%.js.js node_modules/.bin/docco
+$(docco): $(sources) node_modules/.bin/docco
 	mkdir -p docco
 	node_modules/.bin/docco -o docco -c docco.css source/*.js.js
 	sed -i '' -e 's/[ \t]*$$//' docco/*.js.html
@@ -96,7 +97,9 @@ index.html: index.md
 	    node node_modules/.bin/edify highlight --select '.lang-javascript' --language 'javascript') < $< > $@
 
 clean:
-	rm -f $(outputs)
+	rm -f $(outputs) docco/*.html
 
-serve: node_modules/.bin/serve
-	node_modules/.bin/serve -p 4000
+serve: node_modules/.bin/serve all
+	node_modules/.bin/serve --no-less --port 4000
+
+.INTERMEDIATE: $(sources)

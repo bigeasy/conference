@@ -113,18 +113,15 @@ function Conference (object, constructor) {
     this.colleague = null
     this.replaying = false
     this.id = null
-    this.islandName = null
-    this.islandId = null
-    this.participantId = null
-    this.properties = {}
     this._cookie = '0'
-    this._participantIds = null
     this._broadcasts = {}
     this._backlogs = {}
 
     // Currently exposed for testing, but feeling that these method should be
     // public for general testing, with one wrapper that hooks it up to the
     // colleague's streams and another that lets you send mock events.
+
+    //
     this._dispatcher = new Dispatcher(this)
 
     // Events go first through a `Responder` which will invoke our out of band
@@ -159,6 +156,11 @@ Conference.prototype._nextCookie = function () {
     return this._cookie = Monotonic.increment(this._cookie, 0)
 }
 
+// Run the given operation if we are not replaying a log. If we are not
+// replaying then we are performing actions that generate out-of-band log
+// entries. If we are replaying we want to replay those out-of-band log entries.
+
+//
 Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
     if (!this.replaying) {
         new Operation(operation).apply([ async() ])
@@ -169,6 +171,8 @@ Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
 // that we're not going to publish much, and that we're not going to wait for
 // the queue to empty. We don't have back-pressure and if we did have
 // back-pressure, we would have deadlock. We should push, not enqueue.
+
+//
 Conference.prototype.naturalized = function () {
     this._spigot.requests.push({
         module: 'conference',
@@ -177,7 +181,11 @@ Conference.prototype.naturalized = function () {
     })
 }
 
+// Get the properties for a particular id or promise.
+
+//
 Conference.prototype.getProperties = function (id) {
+    id = coalesce(this.government.immigrated.id[id], id)
     return coalesce(this.government.properties[id])
 }
 

@@ -1,4 +1,4 @@
-require('proof/redux')(22, require('cadence')(prove))
+require('proof/redux')(24, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -47,6 +47,8 @@ function prove (async, assert) {
                 var properties = conference.getProperties(id)
                 assert(id, '1', 'immigrate id')
                 assert(conference.getProperties(id), {}, 'immigrate properties')
+                assert(conference.getProperties('1/0'), {}, 'immigrate promise properties')
+                assert(conference.getProperties('2'), null, 'properites not found')
             }
         }))
         constructor.exile()

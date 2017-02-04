@@ -27,29 +27,12 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
+              <p>Common utilities.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> abend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'abend'</span>)
-
-<span class="hljs-keyword">var</span> assert = <span class="hljs-built_in">require</span>(<span class="hljs-string">'assert'</span>)
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> assert = <span class="hljs-built_in">require</span>(<span class="hljs-string">'assert'</span>)
 <span class="hljs-keyword">var</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>)
-
-<span class="hljs-keyword">var</span> Monotonic = <span class="hljs-built_in">require</span>(<span class="hljs-string">'monotonic'</span>).asString
-
-<span class="hljs-keyword">var</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">'nascent.coalesce'</span>)
-
-<span class="hljs-keyword">var</span> cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>)
-<span class="hljs-keyword">var</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'prolific.logger'</span>).createLogger(<span class="hljs-string">'conference'</span>)
-<span class="hljs-keyword">var</span> interrupt = <span class="hljs-built_in">require</span>(<span class="hljs-string">'interrupt'</span>).createInterrupter(<span class="hljs-string">'conference'</span>)
-
-<span class="hljs-keyword">var</span> Operation = <span class="hljs-built_in">require</span>(<span class="hljs-string">'operation'</span>)
-
-<span class="hljs-keyword">var</span> Cliffhanger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cliffhanger'</span>)
-
-<span class="hljs-keyword">var</span> Cache = <span class="hljs-built_in">require</span>(<span class="hljs-string">'magazine'</span>)
-
-<span class="hljs-keyword">var</span> slice = [].slice
 
 </pre></div></div>
 
@@ -62,16 +45,24 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>The patterns below take my back to my efforts to create immutable
-constructors when immutability was all the rage in Java-land. It would have
-pained me to create an object that continues to initialize the object after
-the constructor, but at the same time I’d have no real problem with reponding
-the headers in these streams. It was something that I abandoned after having
-spend some time with it, with rationale that I cannot remember. I can only
-remember the ratoinale that led me to adopt it.</p>
-<p>It did lead me to consider the folly of ORM, though.</p>
+              <p>Control-flow utilities.</p>
 
             </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> abend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'abend'</span>)
+<span class="hljs-keyword">var</span> cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>)
+
+
+<span class="hljs-keyword">var</span> Monotonic = <span class="hljs-built_in">require</span>(<span class="hljs-string">'monotonic'</span>).asString
+
+<span class="hljs-keyword">var</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">'nascent.coalesce'</span>)
+
+<span class="hljs-keyword">var</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'prolific.logger'</span>).createLogger(<span class="hljs-string">'conference'</span>)
+<span class="hljs-keyword">var</span> interrupt = <span class="hljs-built_in">require</span>(<span class="hljs-string">'interrupt'</span>).createInterrupter(<span class="hljs-string">'conference'</span>)
+
+<span class="hljs-keyword">var</span> Operation = <span class="hljs-built_in">require</span>(<span class="hljs-string">'operation'</span>)
+
+</pre></div></div>
 
         </li>
 
@@ -82,10 +73,13 @@ remember the ratoinale that led me to adopt it.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>A <code>Responder</code> class specific to the Conference that will respond to
-directives from a Colleague.</p>
+              <p>Respond to requests from an evented message queue.</p>
 
             </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> Responder = <span class="hljs-built_in">require</span>(<span class="hljs-string">'conduit/responder'</span>)
+
+</pre></div></div>
 
         </li>
 
@@ -96,685 +90,11 @@ directives from a Colleague.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
+              <p>Consume events from an evented message queue.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Responder</span> (<span class="hljs-params">conference</span>) </span>{
-    <span class="hljs-keyword">this</span>._conference = conference
-}
-
-Responder.prototype.join = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">colleague, entry, callback</span>) </span>{
-    <span class="hljs-keyword">this</span>._conference._join(colleague, entry, callback)
-}
-
-Responder.prototype.entry = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, envelope</span>) </span>{
-    <span class="hljs-keyword">this</span>._conference._entry(envelope, <span class="hljs-keyword">async</span>())
-})
-
-Responder.prototype.outOfBand = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, envelope</span>) </span>{
-    <span class="hljs-keyword">this</span>._conference_outOfBand(envelope, <span class="hljs-keyword">async</span>())
-})
-
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Conference</span> (<span class="hljs-params">object, constructor</span>) </span>{
-    <span class="hljs-keyword">this</span>.isLeader = <span class="hljs-literal">false</span>
-    <span class="hljs-keyword">this</span>.colleague = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">this</span>.responder = <span class="hljs-keyword">new</span> Responder(<span class="hljs-keyword">this</span>)
-    <span class="hljs-keyword">this</span>.replaying = <span class="hljs-literal">false</span>
-    <span class="hljs-keyword">this</span>.colleagueId = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">this</span>.islandName = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">this</span>.islandId = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">this</span>.participantId = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">this</span>._cliffhanger = <span class="hljs-keyword">new</span> Cliffhanger
-    <span class="hljs-keyword">this</span>.properties = {}
-    <span class="hljs-keyword">this</span>._cookie = <span class="hljs-string">'0'</span>
-    <span class="hljs-keyword">this</span>._participantIds = <span class="hljs-literal">null</span>
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-5">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
-              </div>
-              <p>Do I need two Magazines? What where reductions?</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">this</span>._broadcasts = <span class="hljs-keyword">new</span> Cache().createMagazine()
-    <span class="hljs-keyword">this</span>._reductions = <span class="hljs-keyword">new</span> Cache().createMagazine()
-
-    <span class="hljs-keyword">constructor</span>(new Constructor(object, this._operations = {}))
-}
-
-Conference.prototype._nextCookie = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._cookie = Monotonic.increment(<span class="hljs-keyword">this</span>._cookie, <span class="hljs-number">0</span>)
-}
-
-Conference.prototype.naturalized = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-    <span class="hljs-keyword">this</span>.colleague.naturalized()
-}
-
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-6">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
-              </div>
-              <p>You went through a lot of iterations with event emitters and whatnot. This
-has yet to settle. Not sure where everything lives in the stack. What is the
-difference between the Kibitzer and the Colleague? Well, I have notions.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-7">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
-              </div>
-              <p>Thus the <code>EventEmitter</code> lives on in the Kibitzer, but a colleague consumer
-has a duck typed interface. In fact, I believe Kibitzer should use Vestibule
-instead of event emitter.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-8">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
-              </div>
-              <p>So, keep in mind that everything here is tightly bound. We’re not going to be
-spreading messages. Colleague is the network interface warpper. Conference is
-the application programming interface. We have them thightly coupled, bu
-still pluggable.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-9">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
-              </div>
-              <p>Notification that a message an enqueued into the Kibiter. Reach right into
-the Kibitzer to shift it.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>Conference.prototype.enqueued = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-    <span class="hljs-keyword">this</span>._enqueued.check()
-}
-
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-10">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
-              </div>
-              <p>Respond an out of band request. If you want to return a status code you can
-just throw the integer value.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>Conference.prototype._outOfBand = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, envelope</span>) </span>{
-    <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.isLeader) <span class="hljs-keyword">throw</span> <span class="hljs-number">504</span>
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-11">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
-              </div>
-              <p>TODO Maybe 404 if not found.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">this</span>._operate({ <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'request'</span>, <span class="hljs-attr">method</span>: <span class="hljs-string">'.'</span> + envelope.to, <span class="hljs-attr">vargs</span>: [ envelope.body ] }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype._exit = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) </span>{
-    <span class="hljs-keyword">if</span> (error) <span class="hljs-keyword">this</span>._error = error
-}
-
-Conference.prototype._getOperation = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">qualifier, name</span>) </span>{
-    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._operations[qualifier + <span class="hljs-string">':'</span> + name]
-}
-
-Conference.prototype.naturalize = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-    assert(<span class="hljs-keyword">this</span>._naturalizing != <span class="hljs-literal">null</span>, <span class="hljs-string">'nothing is naturalizing'</span>)
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.colleagueId == <span class="hljs-keyword">this</span>._naturalizing.colleagueId) {
-        <span class="hljs-keyword">this</span>._conference.naturalize()
-    }
-    <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._naturalizing[colleagueId]
-}
-
-Conference.prototype._operate = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, message</span>) </span>{
-    <span class="hljs-keyword">var</span> operation = <span class="hljs-keyword">this</span>._getOperation(message.qualifier, message.method)
-    <span class="hljs-keyword">if</span> (operation == <span class="hljs-literal">null</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
-    }
-    operation.apply([], message.vargs.concat(<span class="hljs-keyword">async</span>()))
-})
-
-Conference.prototype.ifNotReplaying = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">f, callback</span>) </span>{
-    <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.replaying) {
-        <span class="hljs-keyword">if</span> (callback) {
-            f(callback)
-        } <span class="hljs-keyword">else</span> {
-            f()
-        }
-    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (callback) {
-        callback()
-    }
-}
-
-Conference.prototype._colleague = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, colleague</span>) </span>{
-    <span class="hljs-keyword">this</span>.colleague = colleague
-    <span class="hljs-keyword">this</span>.islandId = <span class="hljs-keyword">this</span>.colleague.kibitzer.legislator.islandId
-})
-
-Conference.prototype._join = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, colleague, entry</span>) </span>{
-    <span class="hljs-keyword">this</span>._colleague = colleague
-    <span class="hljs-keyword">this</span>.replaying = colleague.replaying
-    <span class="hljs-keyword">this</span>.colleagueId = colleague.kibitzer.legislator.id
-    <span class="hljs-keyword">this</span>.islandId = colleague.kibitzer.legislator.islandId
-    <span class="hljs-keyword">this</span>.islandName = colleague.kibitzer.legislator.islandName
-    <span class="hljs-keyword">this</span>._generateParticipantIds(entry)
-    <span class="hljs-keyword">this</span>._operate({ <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'internal'</span>, <span class="hljs-attr">method</span>: <span class="hljs-string">'join'</span>, <span class="hljs-attr">vargs</span>: [ entry ] }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype._generateParticipantIds = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entry</span>) </span>{
-    <span class="hljs-keyword">this</span>._participantIds = {}
-    entry.governmen
-        .majority.concat(entry.government.minority)
-        .concat(entry.government.constituents)
-        .forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">id</span>) </span>{
-            <span class="hljs-keyword">this</span>._participantIds[id] = entry.properties[id].immigrated + <span class="hljs-string">':'</span> + id
-        }, <span class="hljs-keyword">this</span>)
-    <span class="hljs-keyword">this</span>.participantId = <span class="hljs-keyword">this</span>._participantIds[<span class="hljs-keyword">this</span>.colleagueId]
-}
-
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-12">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
-              </div>
-              <p>TODO Setting a property, we only have log messages here, so that our
-indication of what the properties are may be different, out of sync with wha
-the underlying paxos thinks they are, thus, properties are only for
-bootstrapping.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>Conference.prototype._entry = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, entry</span>) </span>{
-    <span class="hljs-keyword">if</span> (entry.government != <span class="hljs-literal">null</span>) {
-    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'&gt;'</span>, entry.properties)
-        <span class="hljs-keyword">this</span>._generateParticipantIds(entry)
-        <span class="hljs-keyword">this</span>.isLeader = entry.government.majority[<span class="hljs-number">0</span>] == <span class="hljs-keyword">this</span>.colleagueId
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-13">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
-              </div>
-              <p>TODO Set immigration on bootstrap.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-comment">/*
-        if (entry.promise == '1/0') {
-            console.log(this.colleagueId)
-            entry.government.immigrate = { id: this.colleagueId }
-        }
-        */</span>
-        <span class="hljs-keyword">var</span> properties = entry.properties
-        <span class="hljs-keyword">if</span> (entry.government.immigrate) {
-            <span class="hljs-keyword">this</span>._operate({
-                <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'internal'</span>,
-                <span class="hljs-attr">method</span>: <span class="hljs-string">'immigrate'</span>,
-                <span class="hljs-attr">vargs</span>: [ entry.government.immigrate.id, properties, entry.promise ]
-            }, <span class="hljs-keyword">async</span>())
-        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (entry.government.exile) {
-            <span class="hljs-keyword">this</span>._operate({
-                <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'internal'</span>,
-                <span class="hljs-attr">method</span>: <span class="hljs-string">'exile'</span>,
-                <span class="hljs-attr">vargs</span>: [ entry.government.exile, properties, entry.promise ]
-            }, <span class="hljs-keyword">async</span>())
-            <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._participantIds[entry.government.exile]
-        }
-    } <span class="hljs-keyword">else</span> {
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-14">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
-              </div>
-              <p>Reminder that if you ever want to do queued instead async then the
-queue should be external and a property of the object the conference
-operates.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-15">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> value = entry.value
-        <span class="hljs-keyword">switch</span> (value.type) {
-        <span class="hljs-keyword">case</span> <span class="hljs-string">'broadcast'</span>:
-            <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-                <span class="hljs-keyword">this</span>._operate({
-                    <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'receive'</span>,
-                    <span class="hljs-attr">method</span>: value.method,
-                    <span class="hljs-attr">vargs</span>: [ value.request ]
-                }, <span class="hljs-keyword">async</span>())
-            }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">response</span>) </span>{
-                logger.info(<span class="hljs-string">'broadcasted'</span>, {
-                    <span class="hljs-attr">$request</span>: value.reqeust,
-                    <span class="hljs-attr">$response</span>: response
-                })
-                <span class="hljs-keyword">this</span>.colleague.publish({
-                    <span class="hljs-attr">type</span>: <span class="hljs-string">'reduce'</span>,
-                    <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>.participantId,
-                    <span class="hljs-attr">reductionKey</span>: value.reductionKey,
-                    <span class="hljs-attr">cookie</span>: value.cookie,
-                    <span class="hljs-attr">method</span>: value.method,
-                    <span class="hljs-attr">request</span>: value.request,
-                    <span class="hljs-attr">response</span>: response
-                }, <span class="hljs-keyword">async</span>())
-            })
-            <span class="hljs-keyword">break</span>
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-16">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
-              </div>
-              <p>Tally our responses and if they match the number of participants,
-then invoke the reduction method.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">case</span> <span class="hljs-string">'reduce'</span>:
-            <span class="hljs-keyword">var</span> reduction = <span class="hljs-keyword">this</span>._reductions.hold(value.reductionKey, {})
-            <span class="hljs-keyword">var</span> complete = <span class="hljs-literal">true</span>
-            reduction.value[value.from] = value.response
-            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> id <span class="hljs-keyword">in</span> <span class="hljs-keyword">this</span>._participantIds) {
-                <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'checking!&gt;'</span>, <span class="hljs-keyword">this</span>._participantIds[id])
-                <span class="hljs-keyword">if</span> (!(<span class="hljs-keyword">this</span>._participantIds[id] <span class="hljs-keyword">in</span> reduction.value)) {
-                    complete = <span class="hljs-literal">false</span>
-                    <span class="hljs-keyword">break</span>
-                }
-            }
-            <span class="hljs-keyword">if</span> (complete) {
-                reduction.remove()
-                <span class="hljs-keyword">var</span> reduced = []
-                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> participantId <span class="hljs-keyword">in</span> reduction.value) {
-                    reduced.push({
-                        <span class="hljs-attr">participantId</span>: participantId,
-                        <span class="hljs-attr">value</span>: reduction.value[participantId]
-                    })
-                }
-                <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-                    <span class="hljs-keyword">this</span>._operate({
-                        <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'reduced'</span>,
-                        <span class="hljs-attr">method</span>: value.method,
-                        <span class="hljs-attr">vargs</span>: [ value.request, reduced ]
-                    }, <span class="hljs-keyword">async</span>())
-                }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-                    <span class="hljs-keyword">var</span> cartridge = <span class="hljs-keyword">this</span>._broadcasts.hold(value.reductionKey, <span class="hljs-literal">null</span>)
-                    <span class="hljs-keyword">if</span> (cartridge.value != <span class="hljs-literal">null</span>) {
-                        <span class="hljs-keyword">this</span>._cliffhanger.resolve(cartridge.value.cookie, [ <span class="hljs-literal">null</span>, reduced ])
-                    }
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-17">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
-              </div>
-              <p>TODO Might leak? Use Cadence finally.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>                    cartridge.release()
-                })
-            } <span class="hljs-keyword">else</span> {
-                reduction.release()
-            }
-            <span class="hljs-keyword">break</span>
-        <span class="hljs-keyword">case</span> <span class="hljs-string">'send'</span>:
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.participantId == value.to) {
-                <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-                    <span class="hljs-keyword">this</span>._operate({
-                        <span class="hljs-attr">qualifier</span>: <span class="hljs-string">'receive'</span>,
-                        <span class="hljs-attr">method</span>: value.method,
-                        <span class="hljs-attr">vargs</span>: [ value.request ]
-                    }, <span class="hljs-keyword">async</span>())
-                }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">response</span>) </span>{
-                    <span class="hljs-keyword">this</span>.colleague.publish(<span class="hljs-keyword">this</span>.reinstatementId, {
-                        <span class="hljs-attr">type</span>: <span class="hljs-string">'respond'</span>,
-                        <span class="hljs-attr">to</span>: value.from,
-                        <span class="hljs-attr">response</span>: response,
-                        <span class="hljs-attr">cookie</span>: value.cookie
-                    }, <span class="hljs-keyword">async</span>())
-                })
-            }
-            <span class="hljs-keyword">break</span>
-        <span class="hljs-keyword">case</span> <span class="hljs-string">'respond'</span>:
-            <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.participantId == value.to) {
-                <span class="hljs-keyword">this</span>._cliffhanger.resolve(value.cookie, [ <span class="hljs-literal">null</span>, value.response ])
-            }
-            <span class="hljs-keyword">break</span>
-        }
-    }
-})
-
-Conference.prototype.outOfBand = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, name, post</span>) </span>{
-    <span class="hljs-keyword">this</span>.colleague.outOfBand(name, post, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype.send = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, colleagueId, message</span>) </span>{
-    <span class="hljs-keyword">this</span>._send(<span class="hljs-literal">false</span>, <span class="hljs-string">'.'</span> + method, colleagueId, message, <span class="hljs-keyword">async</span>())
-})
-
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-18">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
-              </div>
-              <p>Honoring back pressure here, but I’ve not considered if back pressure is
-going to cause deadlock. I’m sure it can. What happens when the queues
-between the parcipants fill?</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-19">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
-              </div>
-              <p>This bit of code here is disconcerting because it indicates an asynchronous
-call back into the system that is waiting for it to complete. At first, I
-want to make this call synchronous because we do not want block here.
-However, there is still error reporting. We can implement <code>publish</code> so tha
-it doesn’t necessarily block, give real thought to how we should deal with
-stream overflow, and keep a consistent interface. We’re going to decide tha
-a high-water mark is unrecoverable, so this call would return an error, and
-that error will crash this participant.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-20">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
-              </div>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>Conference.prototype.broadcast = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, message</span>) </span>{
-    <span class="hljs-keyword">var</span> cookie = <span class="hljs-keyword">this</span>._nextCookie()
-    <span class="hljs-keyword">var</span> participantId = <span class="hljs-keyword">this</span>._participantIds[<span class="hljs-keyword">this</span>.colleagueId]
-    <span class="hljs-keyword">var</span> reductionKey = method + <span class="hljs-string">'['</span> + participantId + <span class="hljs-string">']('</span> + cookie + <span class="hljs-string">')'</span>
-    <span class="hljs-keyword">this</span>._broadcasts.hold(reductionKey, { <span class="hljs-attr">cookie</span>: cookie }).release()
-    <span class="hljs-keyword">this</span>._colleague.publish({
-        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
-        <span class="hljs-attr">type</span>: <span class="hljs-string">'broadcast'</span>,
-        <span class="hljs-attr">reductionKey</span>: reductionKey,
-        <span class="hljs-attr">method</span>: <span class="hljs-string">'.'</span> + method,
-        <span class="hljs-attr">body</span>: message
-    }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype.reduce = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, colleagueId, message</span>) </span>{
-    <span class="hljs-keyword">this</span>._reduce(<span class="hljs-literal">false</span>, <span class="hljs-string">'.'</span> + method, colleagueId, message, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype.message = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">message</span>) </span>{
-    <span class="hljs-keyword">this</span>._enqueue(message, abend)
-}
-
-Conference.prototype._enqueue = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">message, callback</span>) </span>{
-    <span class="hljs-keyword">switch</span> (message.type) {
-    <span class="hljs-keyword">case</span> <span class="hljs-string">'reinstate'</span>:
-        <span class="hljs-keyword">this</span>._message(message, callback)
-        <span class="hljs-keyword">break</span>
-    <span class="hljs-keyword">case</span> <span class="hljs-string">'entry'</span>:
-        <span class="hljs-keyword">if</span> (message.entry.value.government || message.entry.value.namespace == <span class="hljs-string">'bigeasy.compassion.colleague.conference'</span>) {
-            <span class="hljs-keyword">this</span>._message(message, callback)
-        }
-        <span class="hljs-keyword">break</span>
-    }
-}
-
-Conference.prototype.replay = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, message</span>) </span>{
-    <span class="hljs-keyword">var</span> operation = <span class="hljs-keyword">this</span>._getOperation(<span class="hljs-string">'operate'</span>, <span class="hljs-string">'.'</span> + name)
-    <span class="hljs-keyword">if</span> (operation != <span class="hljs-literal">null</span>) {
-        operation.operation.apply([], [ message ])
-    }
-}
-
-Conference.prototype.record = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, message</span>) </span>{
-    <span class="hljs-keyword">this</span>.colleague.record(name, message)
-}
-
-Conference.prototype._pause = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, colleagueId</span>) </span>{
-    <span class="hljs-keyword">var</span> cookie = <span class="hljs-keyword">this</span>._cliffhanger.invoke(<span class="hljs-keyword">async</span>())
-    <span class="hljs-keyword">var</span> participantId = <span class="hljs-keyword">this</span>._participantIds[colleagueId]
-    <span class="hljs-keyword">this</span>.colleague.publish(<span class="hljs-keyword">this</span>.reinstatementId, {
-        <span class="hljs-attr">namespace</span>: <span class="hljs-string">'bigeasy.compassion.colleague.conference'</span>,
-        <span class="hljs-attr">type</span>: <span class="hljs-string">'pause'</span>,
-        <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>._participantIds[<span class="hljs-keyword">this</span>.colleagueId],
-        <span class="hljs-attr">to</span>: colleagueId,
-        <span class="hljs-attr">cookie</span>: cookie
-    }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype._send = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, cancelable, method, colleagueId, message</span>) </span>{
-    <span class="hljs-keyword">var</span> cookie = <span class="hljs-keyword">this</span>._cliffhanger.invoke(<span class="hljs-keyword">async</span>())
-    <span class="hljs-keyword">if</span> (cancelable) {
-        <span class="hljs-keyword">var</span> participantId = <span class="hljs-keyword">this</span>._participantIds[colleagueId]
-    }
-    <span class="hljs-keyword">this</span>.colleague.publish(<span class="hljs-keyword">this</span>.reinstatementId, {
-        <span class="hljs-attr">namespace</span>: <span class="hljs-string">'bigeasy.compassion.colleague.conference'</span>,
-        <span class="hljs-attr">type</span>: <span class="hljs-string">'send'</span>,
-        <span class="hljs-attr">cancelable</span>: cancelable,
-        <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>._participantIds[<span class="hljs-keyword">this</span>.colleagueId],
-        <span class="hljs-attr">to</span>: colleagueId,
-        <span class="hljs-attr">method</span>: method,
-        <span class="hljs-attr">request</span>: message,
-        <span class="hljs-attr">cookie</span>: cookie
-    }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype.publish = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, message</span>) </span>{
-    <span class="hljs-keyword">var</span> cookie = <span class="hljs-keyword">this</span>._cliffhanger.invoke(<span class="hljs-keyword">async</span>())
-    <span class="hljs-keyword">this</span>.colleague.publish(<span class="hljs-keyword">this</span>.reinstatementId, {
-        <span class="hljs-attr">namespace</span>: <span class="hljs-string">'bigeasy.compassion.colleague.conference'</span>,
-        <span class="hljs-attr">type</span>: <span class="hljs-string">'publish'</span>,
-        <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>.participantId,
-        <span class="hljs-attr">method</span>: <span class="hljs-string">'.'</span> + method,
-        <span class="hljs-attr">request</span>: message,
-        <span class="hljs-attr">cookie</span>: cookie
-    }, <span class="hljs-keyword">async</span>())
-})
-
-Conference.prototype._reduce = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, cancelable, method, converanceId, message</span>) </span>{
-    <span class="hljs-keyword">var</span> participantId = <span class="hljs-keyword">this</span>._participantIds[<span class="hljs-keyword">this</span>.colleagueId]
-    <span class="hljs-keyword">var</span> reductionKey = method + <span class="hljs-string">'/'</span> + converanceId
-    <span class="hljs-keyword">this</span>.colleague.publish({
-        <span class="hljs-attr">namespace</span>: <span class="hljs-string">'bigeasy.compassion.colleague.conference'</span>,
-        <span class="hljs-attr">type</span>: <span class="hljs-string">'converge'</span>,
-        <span class="hljs-attr">reductionKey</span>: reductionKey,
-        <span class="hljs-attr">cancelable</span>: cancelable,
-        <span class="hljs-attr">cookie</span>: cookie,
-        <span class="hljs-attr">method</span>: method,
-        <span class="hljs-attr">request</span>: <span class="hljs-literal">null</span>,
-        <span class="hljs-attr">response</span>: message
-    }, <span class="hljs-keyword">async</span>())
-})
-
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-21">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
-              </div>
-              <p>TODO Should probably invoke <code>join</code> as part of naturalization.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>Conference.prototype._setProperties = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, properties</span>) </span>{
-    <span class="hljs-keyword">this</span>.properties = properties
-    <span class="hljs-keyword">return</span> {}
-})
-
-Conference.prototype._naturalized = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, participantId</span>) </span>{
-    assert(<span class="hljs-keyword">this</span>._transtion == <span class="hljs-literal">null</span> || <span class="hljs-keyword">this</span>._transition == participantId)
-    <span class="hljs-keyword">this</span>._transition = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._immigrants[<span class="hljs-number">0</span>] == participantId) {
-        <span class="hljs-keyword">this</span>._immigrants.shift()
-    }
-    <span class="hljs-built_in">console</span>.error(<span class="hljs-string">'&gt;&gt;&gt;'</span>, <span class="hljs-string">'naturalized!'</span>, participantId)
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.participantId == participantId) {
-        <span class="hljs-keyword">this</span>.colleague.naturalized()
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-22">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
-              </div>
-              <p>TODO Mark and track naturalized.
-TODO Do I need some sort of a leadership work queue? Kind of. Something tha
-begins and ends, so I can naturalize a member, then as a separate, cancelable
-task, I can add it to the routing table.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> iterator = <span class="hljs-keyword">this</span>._paused &amp;&amp; <span class="hljs-keyword">this</span>._paused.head.nex
-        <span class="hljs-keyword">this</span>._paused = <span class="hljs-literal">null</span>
-        <span class="hljs-keyword">var</span> loop = <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
-            <span class="hljs-keyword">if</span> (iterator == <span class="hljs-literal">null</span>) {
-                <span class="hljs-keyword">return</span> [ loop.break ]
-            }
-            iterator = iterator.nex
-            <span class="hljs-keyword">this</span>._message(iterator, <span class="hljs-keyword">async</span>())
-        })()
-    } <span class="hljs-keyword">else</span> {
-        <span class="hljs-keyword">this</span>._checkTransitions()
-    }
-})
-
-Conference.prototype._exiled = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, participantId</span>) </span>{
-</pre></div></div>
-
-        </li>
-
-
-        <li id="section-23">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
-              </div>
-              <p>TODO Set <code>_transition</code> to <code>null</code> on collpase.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-built_in">console</span>.error(<span class="hljs-string">'!!!'</span>, <span class="hljs-string">'exiled!'</span>, participantId)
-    assert(<span class="hljs-keyword">this</span>._transtion == <span class="hljs-literal">null</span> || <span class="hljs-keyword">this</span>._transition == participantId)
-    <span class="hljs-keyword">this</span>._transition = <span class="hljs-literal">null</span>
-    <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._exiles.length != <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-keyword">this</span>._exiles[<span class="hljs-number">0</span>].participantId == participantId) {
-        <span class="hljs-keyword">this</span>._exiles.shift()
-    }
-    <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>.properties[participantId]
-    <span class="hljs-keyword">this</span>._checkTransitions()
-})
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> Basin = <span class="hljs-built_in">require</span>(<span class="hljs-string">'conduit/basin'</span>)
 
 <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Constructor</span> (<span class="hljs-params">object, operations</span>) </span>{
     <span class="hljs-keyword">this</span>._object = objec
@@ -802,20 +122,486 @@ Constructor.prototype.exile = <span class="hljs-function"><span class="hljs-keyw
 }
 
 Constructor.prototype.receive = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'receive'</span>, <span class="hljs-string">'.'</span> + name, coalesce(method, name))
+    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'receive'</span>, name, coalesce(method, name))
 }
 
 Constructor.prototype.reduced = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'reduced'</span>, <span class="hljs-string">'.'</span> + name, coalesce(method, name))
+    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'reduced'</span>, name, coalesce(method, name))
 }
 
 Constructor.prototype.request = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'request'</span>, <span class="hljs-string">'.'</span> + name, coalesce(name, method))
+    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'request'</span>, name, coalesce(name, method))
 }
 
-Constructor.prototype.operate = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'operate'</span>, <span class="hljs-string">'.'</span> + name, coalesce(name, method))
+Constructor.prototype.catalog = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
+    <span class="hljs-keyword">this</span>._setOperation(<span class="hljs-string">'catalog'</span>, name, coalesce(name, method))
 }
+
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-5">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>The patterns below take my back to my efforts to create immutable
+constructors when immutability was all the rage in Java-land. It would have
+pained me to create an object that continues to initialize the object after
+the constructor, but at the same time I’d have no real problem with reponding
+the headers in these streams. It was something that I abandoned after having
+spend some time with it, with rationale that I cannot remember. I can only
+remember the ratoinale that led me to adopt it.</p>
+<p>It did lead me to consider the folly of ORM, though.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-6">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>A <code>Responder</code> class specific to the Conference that will respond to
+directives from a Colleague.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-7">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Dispatcher</span> (<span class="hljs-params">conference</span>) </span>{
+    <span class="hljs-keyword">this</span>._conference = conference
+}
+
+Dispatcher.prototype.request = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">envelope, callback</span>) </span>{
+    <span class="hljs-keyword">this</span>._conference._outOfBand(envelope, callback)
+}
+
+Dispatcher.prototype.fromBasin = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">envelope, callback</span>) </span>{
+    <span class="hljs-keyword">switch</span> (envelope.method) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">'entry'</span>:
+        <span class="hljs-keyword">this</span>._conference._entry(envelope, callback)
+        <span class="hljs-keyword">break</span>
+    <span class="hljs-keyword">case</span> <span class="hljs-string">'replay'</span>:
+        <span class="hljs-keyword">this</span>._conference._replay(envelope, callback)
+        <span class="hljs-keyword">break</span>
+    }
+}
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Conference</span> (<span class="hljs-params">object, constructor</span>) </span>{
+    <span class="hljs-keyword">this</span>.isLeader = <span class="hljs-literal">false</span>
+    <span class="hljs-keyword">this</span>.colleague = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>.responder = <span class="hljs-keyword">new</span> Responder(<span class="hljs-keyword">this</span>)
+    <span class="hljs-keyword">this</span>.replaying = <span class="hljs-literal">false</span>
+    <span class="hljs-keyword">this</span>.id = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>.islandName = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>.islandId = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>.participantId = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>.properties = {}
+    <span class="hljs-keyword">this</span>._cookie = <span class="hljs-string">'0'</span>
+    <span class="hljs-keyword">this</span>._participantIds = <span class="hljs-literal">null</span>
+    <span class="hljs-keyword">this</span>._broadcasts = {}
+    <span class="hljs-keyword">this</span>._backlogs = {}
+
+    <span class="hljs-keyword">var</span> dispatcher = <span class="hljs-keyword">new</span> Dispatcher(<span class="hljs-keyword">this</span>)
+
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-8">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Events go first through a <code>Responder</code> which will invoke our out of band
+method and return the result. If the message is not an out of band
+requests it is a message that does not expect a response. It will flow
+into the <code>Basin</code> where we’ll dispatch it and send to response.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-keyword">var</span> responder = <span class="hljs-keyword">new</span> Responder(dispatcher, <span class="hljs-string">'outOfBand'</span>)
+    <span class="hljs-keyword">var</span> basin = <span class="hljs-keyword">new</span> Basin(dispatcher)
+
+    responder.spigot.emptyInto(basin)
+
+    <span class="hljs-keyword">this</span>.spigot = responder.spigo
+
+    <span class="hljs-keyword">constructor</span>(new Constructor(object, this._operations = {}))
+}
+
+Conference.prototype._nextCookie = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._cookie = Monotonic.increment(<span class="hljs-keyword">this</span>._cookie, <span class="hljs-number">0</span>)
+}
+
+Conference.prototype.ifNotReplaying = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, operation</span>) </span>{
+    <span class="hljs-keyword">if</span> (!<span class="hljs-keyword">this</span>.replaying) {
+        <span class="hljs-keyword">new</span> Operation(operation).apply([ <span class="hljs-keyword">async</span>() ])
+    }
+})
+
+Conference.prototype.naturalized = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+    <span class="hljs-keyword">this</span>._colleague.naturalized()
+}
+
+Conference.prototype.getProperties = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">id</span>) </span>{
+    <span class="hljs-keyword">return</span> coalesce(<span class="hljs-keyword">this</span>.government.properties[id])
+}
+
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-9">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Respond an out of band request. If you want to return a status code you can
+just throw the integer value.</p>
+<p>Not sure if I want to use UNIX codes or HTTP status codes. Leaning toward
+HTTP status codes and throwing them as integer.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-10">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>Conference.prototype._outOfBand = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, envelope</span>) </span>{
+    <span class="hljs-keyword">switch</span> (envelope.type) {
+    <span class="hljs-keyword">case</span> <span class="hljs-string">'request'</span>:
+        envelope = envelope.body
+        <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'request'</span>, envelope.method, [ envelope.body ], <span class="hljs-keyword">async</span>())
+        <span class="hljs-keyword">break</span>
+    <span class="hljs-keyword">case</span> <span class="hljs-string">'backlog'</span>:
+        <span class="hljs-keyword">return</span> [ coalesce(<span class="hljs-keyword">this</span>._backlogs[envelope.from]) ]
+    }
+})
+
+Conference.prototype._getOperation = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">qualifier, name</span>) </span>{
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>._operations[qualifier + <span class="hljs-string">':'</span> + name]
+}
+
+Conference.prototype._operate = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, qualifier, method, vargs</span>) </span>{
+    <span class="hljs-keyword">var</span> operation = <span class="hljs-keyword">this</span>._getOperation(qualifier, method)
+    <span class="hljs-keyword">if</span> (operation == <span class="hljs-literal">null</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>
+    }
+    operation.apply(vargs.concat(<span class="hljs-keyword">async</span>()))
+})
+
+Conference.prototype._join = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, colleague, entry</span>) </span>{
+    <span class="hljs-keyword">this</span>._colleague = colleague
+    <span class="hljs-keyword">this</span>.replaying = colleague.replaying
+    <span class="hljs-keyword">this</span>.id = colleague.kibitzer.legislator.id
+    <span class="hljs-keyword">this</span>.islandId = colleague.kibitzer.legislator.islandId
+    <span class="hljs-keyword">this</span>.islandName = colleague.kibitzer.legislator.islandName
+    <span class="hljs-keyword">this</span>.government = entry.body
+    <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'internal'</span>, <span class="hljs-string">'join'</span>, [ <span class="hljs-keyword">this</span> ], <span class="hljs-keyword">async</span>())
+})
+
+Conference.prototype._getBacklog = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async</span>) </span>{
+    <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">this</span>._colleague.outOfBand(<span class="hljs-keyword">this</span>.government.majority[<span class="hljs-number">0</span>], {
+            <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+            <span class="hljs-attr">type</span>: <span class="hljs-string">'backlog'</span>,
+            <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>.government.promise
+        }, <span class="hljs-keyword">async</span>())
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">broadcasts</span>) </span>{
+        <span class="hljs-keyword">var</span> entries = []
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> broadcasts) {
+            <span class="hljs-keyword">var</span> broadcast = broadcasts[key]
+            entries.push({
+                <span class="hljs-attr">body</span>: {
+                    <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+                    <span class="hljs-attr">type</span>: <span class="hljs-string">'broadcast'</span>,
+                    <span class="hljs-attr">key</span>: key,
+                    <span class="hljs-attr">method</span>: broadcast.method,
+                    <span class="hljs-attr">body</span>: broadcast.reques
+                }
+            })
+            <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> promise <span class="hljs-keyword">in</span> broadcast.responses) {
+                entries.push({
+                    <span class="hljs-attr">body</span>: {
+                        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+                        <span class="hljs-attr">type</span>: <span class="hljs-string">'reduce'</span>,
+                        <span class="hljs-attr">from</span>: promise,
+                        <span class="hljs-attr">key</span>: key,
+                        <span class="hljs-attr">method</span>: broadcast.method,
+                        <span class="hljs-attr">body</span>: broadcast.responses[promise]
+                    }
+                })
+            }
+        }
+        <span class="hljs-keyword">async</span>.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">entry</span>) </span>{
+            <span class="hljs-keyword">this</span>._entry(entry, <span class="hljs-keyword">async</span>())
+        })(entries)
+    }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">this</span>._colleague.publish({
+            <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+            <span class="hljs-attr">type</span>: <span class="hljs-string">'naturalized'</span>,
+            <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>.government.promise,
+            <span class="hljs-attr">body</span>: <span class="hljs-literal">null</span>
+        }, <span class="hljs-keyword">async</span>())
+    })
+})
+
+Conference.prototype._entry = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, entry</span>) </span>{
+    <span class="hljs-keyword">if</span> (entry.government) {
+        <span class="hljs-keyword">this</span>.government = entry.body
+        <span class="hljs-keyword">this</span>.isLeader = <span class="hljs-keyword">this</span>.government.majority[<span class="hljs-number">0</span>] == <span class="hljs-keyword">this</span>.id
+        <span class="hljs-keyword">var</span> properties = entry.properties, immigran
+        <span class="hljs-keyword">if</span> (immigrant = <span class="hljs-keyword">this</span>.government.immigrant) {
+            <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'internal'</span>, <span class="hljs-string">'immigrate'</span>, [ <span class="hljs-keyword">this</span>.government.immigrant.id ], <span class="hljs-keyword">async</span>())
+            }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">if</span> (immigrant.id != <span class="hljs-keyword">this</span>.id) {
+                    <span class="hljs-keyword">this</span>._backlogs[<span class="hljs-keyword">this</span>.government.promise] = <span class="hljs-built_in">JSON</span>.parse(<span class="hljs-built_in">JSON</span>.stringify(<span class="hljs-keyword">this</span>._broadcasts))
+                } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.government.promise != <span class="hljs-string">'1/0'</span>) {
+                    <span class="hljs-keyword">this</span>._getBacklog(<span class="hljs-keyword">async</span>())
+                }
+            })
+        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.government.exile) {
+            <span class="hljs-keyword">var</span> exile = <span class="hljs-keyword">this</span>.government.exile
+            <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'internal'</span>, <span class="hljs-string">'exile'</span>, [ exile.id, exile.promise, exile.properties ], <span class="hljs-keyword">async</span>())
+            }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">var</span> promise = <span class="hljs-keyword">this</span>.government.exile.promise
+                <span class="hljs-keyword">var</span> broadcasts = []
+                <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> key <span class="hljs-keyword">in</span> <span class="hljs-keyword">this</span>._broadcasts) {
+                    <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._broadcasts[key].responses[promise]
+                    broadcasts.push(<span class="hljs-keyword">this</span>._broadcasts[key])
+                }
+                <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._backlogs[promise]
+                <span class="hljs-keyword">async</span>.forEach(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">broadcast</span>) </span>{
+                    <span class="hljs-keyword">this</span>._checkReduced(broadcast, <span class="hljs-keyword">async</span>())
+                })(broadcasts)
+            })
+        }
+    } <span class="hljs-keyword">else</span> {
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-11">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Reminder that if you ever want to do queued instead async then the
+queue should be external and a property of the object the conference
+operates.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-12">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">var</span> envelope = entry.body
+        <span class="hljs-keyword">switch</span> (envelope.type) {
+        <span class="hljs-keyword">case</span> <span class="hljs-string">'broadcast'</span>:
+            <span class="hljs-keyword">this</span>._broadcasts[envelope.key] = {
+                <span class="hljs-attr">key</span>: envelope.key,
+                <span class="hljs-attr">method</span>: envelope.method,
+                <span class="hljs-attr">request</span>: envelope.body,
+                <span class="hljs-attr">responses</span>: {}
+            }
+            <span class="hljs-keyword">async</span>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+                <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'receive'</span>, envelope.method, [ envelope.body ], <span class="hljs-keyword">async</span>())
+            }, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">response</span>) </span>{
+                <span class="hljs-keyword">this</span>._colleague.publish({
+                    <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+                    <span class="hljs-attr">type</span>: <span class="hljs-string">'reduce'</span>,
+                    <span class="hljs-attr">from</span>: <span class="hljs-keyword">this</span>.government.immigrated.promise[<span class="hljs-keyword">this</span>.id],
+                    <span class="hljs-attr">key</span>: envelope.key,
+                    <span class="hljs-attr">method</span>: envelope.method,
+                    <span class="hljs-attr">body</span>: response
+                }, <span class="hljs-keyword">async</span>())
+            })
+            <span class="hljs-keyword">break</span>
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-13">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Tally our responses and if they match the number of participants,
+then invoke the reduction method.</p>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">case</span> <span class="hljs-string">'reduce'</span>:
+            <span class="hljs-keyword">var</span> broadcast = <span class="hljs-keyword">this</span>._broadcasts[envelope.key]
+
+            broadcast.responses[envelope.from] = envelope.body
+
+            <span class="hljs-keyword">this</span>._checkReduced(broadcast, <span class="hljs-keyword">async</span>())
+
+            <span class="hljs-keyword">break</span>
+        <span class="hljs-keyword">case</span> <span class="hljs-string">'naturalized'</span>:
+            <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._backlogs[envelope.from]
+            <span class="hljs-keyword">break</span>
+        }
+    }
+})
+
+Conference.prototype._checkReduced = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, broadcast</span>) </span>{
+    <span class="hljs-keyword">var</span> complete = <span class="hljs-literal">true</span>
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> promise <span class="hljs-keyword">in</span> <span class="hljs-keyword">this</span>.government.immigrated.id) {
+        <span class="hljs-keyword">if</span> (!(promise <span class="hljs-keyword">in</span> broadcast.responses)) {
+            complete = <span class="hljs-literal">false</span>
+            <span class="hljs-keyword">break</span>
+        }
+    }
+
+    <span class="hljs-keyword">if</span> (complete) {
+        <span class="hljs-keyword">var</span> reduced = []
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> promise <span class="hljs-keyword">in</span> broadcast.responses) {
+            reduced.push({
+                <span class="hljs-attr">id</span>: <span class="hljs-keyword">this</span>.government.immigrated.id[promise],
+                <span class="hljs-attr">value</span>: broadcast.responses[promise]
+            })
+        }
+        <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'reduced'</span>, broadcast.method, [ reduced, broadcast.request ], <span class="hljs-keyword">async</span>())
+        <span class="hljs-keyword">delete</span> <span class="hljs-keyword">this</span>._broadcasts[broadcast.key]
+    }
+})
+
+Conference.prototype.outOfBand = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, to, method, body</span>) </span>{
+    <span class="hljs-keyword">this</span>._colleague.outOfBand(to, {
+        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+        <span class="hljs-attr">type</span>: <span class="hljs-string">'request'</span>,
+        <span class="hljs-attr">body</span>: {
+            <span class="hljs-attr">method</span>: method,
+            <span class="hljs-attr">body</span>: body
+        }
+    }, <span class="hljs-keyword">async</span>())
+})
+
+Conference.prototype.record = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, message</span>) </span>{
+    <span class="hljs-keyword">this</span>._colleague.record({
+        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+        <span class="hljs-attr">method</span>: method,
+        <span class="hljs-attr">body</span>: message
+    }, <span class="hljs-keyword">async</span>())
+    <span class="hljs-keyword">this</span>.replay({
+        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+        <span class="hljs-attr">method</span>: method,
+        <span class="hljs-attr">body</span>: message
+    }, <span class="hljs-keyword">async</span>())
+})
+
+Conference.prototype.replay = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, record</span>) </span>{
+    <span class="hljs-keyword">this</span>._operate(<span class="hljs-string">'catalog'</span>, record.method, [ record.body ], <span class="hljs-keyword">async</span>())
+})
+
+</pre></div></div>
+
+        </li>
+
+
+        <li id="section-14">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Honoring back pressure here, but I’ve not considered if back pressure is
+going to cause deadlock. I’m sure it can. What happens when the queues
+between the parcipants fill?</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-15">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>This bit of code here is disconcerting because it indicates an asynchronous
+call back into the system that is waiting for it to complete. At first, I
+want to make this call synchronous because we do not want block here.
+However, there is still error reporting. We can implement <code>publish</code> so tha
+it doesn’t necessarily block, give real thought to how we should deal with
+stream overflow, and keep a consistent interface. We’re going to decide tha
+a high-water mark is unrecoverable, so this call would return an error, and
+that error will crash this participant.</p>
+
+            </div>
+
+        </li>
+
+
+        <li id="section-16">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+
+            </div>
+
+            <div class="content"><div class='highlight'><pre>Conference.prototype.broadcast = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, method, message</span>) </span>{
+    <span class="hljs-keyword">var</span> cookie = <span class="hljs-keyword">this</span>._nextCookie()
+    <span class="hljs-keyword">var</span> uniqueId = <span class="hljs-keyword">this</span>.government.immigrated.promise[<span class="hljs-keyword">this</span>.id]
+    <span class="hljs-keyword">var</span> key = method + <span class="hljs-string">'['</span> + uniqueId + <span class="hljs-string">']('</span> + cookie + <span class="hljs-string">')'</span>
+    <span class="hljs-keyword">this</span>._colleague.publish({
+        <span class="hljs-attr">module</span>: <span class="hljs-string">'conference'</span>,
+        <span class="hljs-attr">type</span>: <span class="hljs-string">'broadcast'</span>,
+        <span class="hljs-attr">key</span>: key,
+        <span class="hljs-attr">method</span>: method,
+        <span class="hljs-attr">body</span>: message
+    }, <span class="hljs-keyword">async</span>())
+})
 
 <span class="hljs-built_in">module</span>.exports = Conference
 

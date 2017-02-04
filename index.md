@@ -29,4 +29,4 @@ colleague.listen(functionn (error) {
 ```
 
 Some thoughts on construction above. Do not have a good idea of how to create an
-example of usage.
+example of usage. Here's some [Docco](./docco/) for now.

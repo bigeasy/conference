@@ -1,12 +1,9 @@
-require('proof/redux')(23, require('cadence')(prove))
+require('proof/redux')(22, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
     var reactor = {
         join: cadence(function (async) {
-            conference.ifNotReplaying(function () {
-                assert(true, 'if not replaying sync')
-            })
             conference.ifNotReplaying(cadence(function (async) {
                 assert(true, 'if not replaying async')
                 conference.record('catalog', 1, async())

@@ -198,7 +198,7 @@ Conference.prototype.getProperties = function (id) {
 //
 Conference.prototype._outOfBand = cadence(function (async, envelope) {
     switch (envelope.type) {
-    case 'request':
+    case 'outOfBand':
         envelope = envelope.body
         this._operate('request', envelope.method, [ envelope.body ], async())
         break
@@ -374,12 +374,20 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
 
 // TODO Save welcomes, or introductions, and have them expire when the welcome
 // expires, and maybe that is the entirety of out-of-band.
+
+//
 Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
-    this._colleague.outOfBand(to, {
+    this._requester.request('conference', {
+        // Do not think it odd that this is nested and `'backlog'` is not.
+        // It reflects that one is system internal and the other is four our
+        // dear user.
         module: 'conference',
-        type: 'request',
+        method: 'outOfBand',
         body: {
+            module: 'conference',
             method: method,
+            to: this.government.majority[0],
+            from: this.government.promise,
             body: body
         }
     }, async())

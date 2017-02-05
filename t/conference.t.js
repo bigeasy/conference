@@ -1,4 +1,4 @@
-require('proof/redux')(24, require('cadence')(prove))
+require('proof/redux')(26, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -6,7 +6,9 @@ function prove (async, assert) {
         join: cadence(function (async) {
             conference.ifNotReplaying(cadence(function (async) {
                 assert(true, 'if not replaying async')
-                conference.record('catalog', 1, async())
+                async(function () {
+                    conference.record('catalog', 1, async())
+                })
             }), async())
         }),
         catalog: cadence(function (async, value) {
@@ -43,12 +45,17 @@ function prove (async, assert) {
         constructor.join()
         constructor.immigrate(cadence(function (async, id) {
             if (conference.government.promise == '1/0') {
-                conference.naturalized()
-                var properties = conference.getProperties(id)
-                assert(id, '1', 'immigrate id')
-                assert(conference.getProperties(id), {}, 'immigrate properties')
-                assert(conference.getProperties('1/0'), {}, 'immigrate promise properties')
-                assert(conference.getProperties('2'), null, 'properites not found')
+                async(function () {
+                    conference.outOfBand('1', 'request', 1, async())
+                }, function (response) {
+                    assert(response, 2, 'out of band')
+                    conference.naturalized()
+                    var properties = conference.getProperties(id)
+                    assert(id, '1', 'immigrate id')
+                    assert(conference.getProperties(id), {}, 'immigrate properties')
+                    assert(conference.getProperties('1/0'), {}, 'immigrate promise properties')
+                    assert(conference.getProperties('2'), null, 'properites not found')
+                })
             }
         }))
         constructor.exile()
@@ -97,12 +104,36 @@ function prove (async, assert) {
             method: 'entry',
             body: immigrate
         }, async())
+        assert(requests.shift(), {
+            module: 'conduit',
+            to: 'conference',
+            from: 'conference',
+            cookie: '1',
+            body: {
+                module: 'conference',
+                method: 'outOfBand',
+                body: {
+                    module: 'conference',
+                    method: 'request',
+                    to: '1',
+                    from: '1/0',
+                    body: 1
+                }
+            }
+        }, 'out of band request')
+        conference.spigot.responses.enqueue({
+            module: 'conduit',
+            method: 'request',
+            to: 'conference',
+            cookie: '1',
+            body: 2
+        }, async())
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
             method: 'naturalized',
             body: null
-        }, 'recorded')
+        }, 'naturalized')
         dispatcher.fromBasin({
             module: 'colleague',
             method: 'entry',
@@ -171,7 +202,7 @@ function prove (async, assert) {
         assert(broadcasts, null, 'backlog not found')
         dispatcher.request({
             module: 'conference',
-            type: 'request',
+            type: 'outOfBand',
             from: '2/0',
             body: {
                 method: 'request',
@@ -182,7 +213,7 @@ function prove (async, assert) {
         assert(response, 2, 'out of band response')
         dispatcher.request({
             module: 'conference',
-            type: 'request',
+            type: 'outOfBand',
             from: '2/0',
             body: {
                 method: '_request',

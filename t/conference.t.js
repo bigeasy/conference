@@ -172,7 +172,7 @@ function prove (async, assert) {
         }, 'constituent added')
         dispatcher.request({
             module: 'conference',
-            type: 'backlog',
+            method: 'backlog',
             from: '2/0'
         }, async())
     }, function (broadcasts) {
@@ -186,7 +186,7 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'naturalized',
+                    method: 'naturalized',
                     from: '2/0'
                 }
             }
@@ -194,7 +194,7 @@ function prove (async, assert) {
     }, function () {
         dispatcher.request({
             module: 'conference',
-            type: 'backlog',
+            method: 'backlog',
             from: '2/0',
             body: null
         }, async())
@@ -202,7 +202,7 @@ function prove (async, assert) {
         assert(broadcasts, null, 'backlog not found')
         dispatcher.request({
             module: 'conference',
-            type: 'outOfBand',
+            method: 'outOfBand',
             from: '2/0',
             body: {
                 method: 'request',
@@ -213,7 +213,7 @@ function prove (async, assert) {
         assert(response, 2, 'out of band response')
         dispatcher.request({
             module: 'conference',
-            type: 'outOfBand',
+            method: 'outOfBand',
             from: '2/0',
             body: {
                 method: '_request',
@@ -226,10 +226,13 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            type: 'broadcast',
+            method: 'broadcast',
             key: 'message[1/0](1)',
-            method: 'message',
-            body: 1
+            body: {
+                module: 'conference',
+                method: 'message',
+                body: 1
+            }
         }, 'published')
         dispatcher.fromBasin({
             module: 'colleague',
@@ -240,20 +243,21 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'broadcast',
+                    method: 'broadcast',
                     key: 'message[1/0](1)',
-                    method: 'message',
-                    body: 1
+                    body: {
+                        method: 'message',
+                        body: 1
+                    }
                 }
             }
         }, async())
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            type: 'reduce',
+            method: 'reduce',
             from: '1/0',
             key: 'message[1/0](1)',
-            method: 'message',
             body: 0
         }, 'first reduction published')
         dispatcher.fromBasin({
@@ -265,10 +269,9 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'reduce',
+                    method: 'reduce',
                     from: '1/0',
                     key: 'message[1/0](1)',
-                    method: 'message',
                     body: 7
                 }
             }
@@ -282,10 +285,9 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'reduce',
+                    method: 'reduce',
                     from: '2/0',
                     key: 'message[1/0](1)',
-                    method: 'message',
                     body: 5
                 }
             }
@@ -310,20 +312,21 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'broadcast',
+                    method: 'broadcast',
                     key: 'message[1/0](2)',
-                    method: 'message',
-                    body: 1
+                    body: {
+                        method: 'message',
+                        body: 1
+                    }
                 }
             }
         }, async())
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            type: 'reduce',
+            method: 'reduce',
             from: '1/0',
             key: 'message[1/0](2)',
-            method: 'message',
             body: 0
         }, 'broadcast again')
         dispatcher.fromBasin({
@@ -335,10 +338,9 @@ function prove (async, assert) {
                 government: false,
                 body: {
                     module: 'conference',
-                    type: 'reduce',
+                    method: 'reduce',
                     from: '1/0',
                     key: 'message[1/0](2)',
-                    method: 'message',
                     body: 0
                 }
             }
@@ -356,7 +358,7 @@ function prove (async, assert) {
                     promise: '3/0',
                     majority: [ '1' ],
                     minority: [],
-                    constituents: [ ],
+                    constituents: [],
                     exile: { id: '2', promise: '2/0', properties: {} },
                     properties: { '1': {}, '2': {} },
                     immigrated: {
@@ -446,10 +448,9 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            type: 'reduce',
+            method: 'reduce',
             from: '3/0',
             key: 'double[1/0](1)',
-            method: 'double',
             body: 2
         }, 'broadcast backlog')
         assert(requests.shift(), {

@@ -197,7 +197,7 @@ Conference.prototype.getProperties = function (id) {
 
 //
 Conference.prototype._outOfBand = cadence(function (async, envelope) {
-    switch (envelope.type) {
+    switch (envelope.method) {
     case 'outOfBand':
         envelope = envelope.body
         this._operate('request', envelope.method, [ envelope.body ], async())
@@ -241,20 +241,21 @@ Conference.prototype._getBacklog = cadence(function (async) {
             entries.push({
                 body: {
                     module: 'conference',
-                    type: 'broadcast',
+                    method: 'broadcast',
                     key: key,
-                    method: broadcast.method,
-                    body: broadcast.request
+                    body: {
+                        method: broadcast.method,
+                        body: broadcast.request
+                    }
                 }
             })
             for (var promise in broadcast.responses) {
                 entries.push({
                     body: {
                         module: 'conference',
-                        type: 'reduce',
+                        method: 'reduce',
                         from: promise,
                         key: key,
-                        method: broadcast.method,
                         body: broadcast.responses[promise]
                     }
                 })
@@ -312,23 +313,22 @@ Conference.prototype._entry = cadence(function (async, entry) {
 
         //
         var envelope = entry.body
-        switch (envelope.type) {
+        switch (envelope.method) {
         case 'broadcast':
             this._broadcasts[envelope.key] = {
                 key: envelope.key,
-                method: envelope.method,
-                request: envelope.body,
+                method: envelope.body.method,
+                request: envelope.body.body,
                 responses: {}
             }
             async(function () {
-                this._operate('receive', envelope.method, [ envelope.body ], async())
+                this._operate('receive', envelope.body.method, [ envelope.body.body ], async())
             }, function (response) {
                 this._spigot.requests.push({
                     module: 'conference',
-                    type: 'reduce',
+                    method: 'reduce',
                     from: this.government.immigrated.promise[this.id],
                     key: envelope.key,
-                    method: envelope.method,
                     body: response
                 })
             })
@@ -339,6 +339,7 @@ Conference.prototype._entry = cadence(function (async, entry) {
             var broadcast = this._broadcasts[envelope.key]
 
             broadcast.responses[envelope.from] = envelope.body
+
 
             this._checkReduced(broadcast, async())
 
@@ -431,10 +432,13 @@ Conference.prototype.broadcast = function (method, message) {
     var key = method + '[' + uniqueId + '](' + cookie + ')'
     this._spigot.requests.push({
         module: 'conference',
-        type: 'broadcast',
+        method: 'broadcast',
         key: key,
-        method: method,
-        body: message
+        body: {
+            module: 'conference',
+            method: method,
+            body: message
+        }
     })
 }
 

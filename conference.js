@@ -45,9 +45,10 @@ var Basin = require('conduit/basin')
 // about as immutable as JavaScript is going to get.
 
 //
-function Constructor (object, operations) {
+function Constructor (properties, object, operations) {
     this._object = object
     this._operations = operations
+    this._properties = properties
 }
 
 Constructor.prototype._setOperation = function (qualifier, name, operation) {
@@ -56,6 +57,16 @@ Constructor.prototype._setOperation = function (qualifier, name, operation) {
         operation = { object: this._object, method: operation }
     }
     this._operations[qualifier + ':' + name] = new Operation(operation)
+}
+
+Constructor.prototype.setProperty = function (name, value) {
+    this._properties[name] = value
+}
+
+Constructor.prototype.setProperties = function (properties) {
+    for (var name in properties) {
+        this._properties[name] = properties[name]
+    }
 }
 
 Constructor.prototype.join = function (method) {
@@ -149,7 +160,7 @@ function Conference (object, constructor) {
     this._spigot = new Spigot(this._dispatcher)
     this._spigot.emptyInto(this._requester.basin)
 
-    constructor(new Constructor(object, this._operations = {}))
+    constructor(new Constructor(this._properties = {}, object, this._operations = {}))
 }
 
 // An ever increasing identify to adorn our broadcasts so that it's key will be
@@ -202,6 +213,8 @@ Conference.prototype.getProperties = function (id) {
 //
 Conference.prototype._outOfBand = cadence(function (async, envelope) {
     switch (envelope.method) {
+    case 'connect':
+        return [ this.properties ]
     case 'outOfBand':
         envelope = envelope.body
         this._operate('request', envelope.method, [ envelope.body ], async())

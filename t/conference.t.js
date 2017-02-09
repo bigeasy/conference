@@ -1,4 +1,4 @@
-require('proof/redux')(26, require('cadence')(prove))
+require('proof/redux')(27, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -19,6 +19,11 @@ function prove (async, assert) {
         }),
         message: cadence(function (async, value) {
             return value - 1
+        }),
+        government: cadence(function (async, conference) {
+            if (conference.government.promise == '1/0') {
+                assert(true, 'got a government')
+            }
         }),
         messages: cadence(function (async, responses, request) {
             assert(request, 1, 'reduced request')
@@ -59,6 +64,7 @@ function prove (async, assert) {
             }
         }))
         constructor.exile()
+        constructor.government()
         constructor.receive('message')
         constructor.reduced('message', 'messages')
         constructor.request('request')

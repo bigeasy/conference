@@ -70,6 +70,10 @@ Constructor.prototype.exile = function (method) {
     this._setOperation('internal', 'exile', coalesce(method, 'exile'))
 }
 
+Constructor.prototype.government = function (method) {
+    this._setOperation('internal', 'government', coalesce(method, 'government'))
+}
+
 Constructor.prototype.receive = function (name, method) {
     this._setOperation('receive', name, coalesce(method, name))
 }
@@ -278,34 +282,39 @@ Conference.prototype._entry = cadence(function (async, entry) {
     if (entry.government) {
         this.government = entry.body
         this.isLeader = this.government.majority[0] == this.id
-        var properties = entry.properties, immigrant
-        if (immigrant = this.government.immigrant) {
-            async(function () {
-                this._operate('internal', 'immigrate', [ this.government.immigrant.id ], async())
-            }, function () {
-                if (immigrant.id != this.id) {
-                    this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
-                } else if (this.government.promise != '1/0') {
-                    this._getBacklog(async())
-                }
-            })
-        } else if (this.government.exile) {
-            var exile = this.government.exile
-            async(function () {
-                this._operate('internal', 'exile', [ exile.id, exile.promise, exile.properties ], async())
-            }, function () {
-                var promise = this.government.exile.promise
-                var broadcasts = []
-                for (var key in this._broadcasts) {
-                    delete this._broadcasts[key].responses[promise]
-                    broadcasts.push(this._broadcasts[key])
-                }
-                delete this._backlogs[promise]
-                async.forEach(function (broadcast) {
-                    this._checkReduced(broadcast, async())
-                })(broadcasts)
-            })
-        }
+        var properties = entry.properties
+        async(function () {
+            if (this.government.immigrant) {
+                var immigrant = this.government.immigrant
+                async(function () {
+                    this._operate('internal', 'immigrate', [ immigrant.id ], async())
+                }, function () {
+                    if (immigrant.id != this.id) {
+                        this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
+                    } else if (this.government.promise != '1/0') {
+                        this._getBacklog(async())
+                    }
+                })
+            } else if (this.government.exile) {
+                var exile = this.government.exile
+                async(function () {
+                    this._operate('internal', 'exile', [ exile.id, exile.promise, exile.properties ], async())
+                }, function () {
+                    var promise = this.government.exile.promise
+                    var broadcasts = []
+                    for (var key in this._broadcasts) {
+                        delete this._broadcasts[key].responses[promise]
+                        broadcasts.push(this._broadcasts[key])
+                    }
+                    delete this._backlogs[promise]
+                    async.forEach(function (broadcast) {
+                        this._checkReduced(broadcast, async())
+                    })(broadcasts)
+                })
+            }
+        }, function () {
+            this._operate('internal', 'government', [ this ], async())
+        })
     } else {
         // Reminder that if you ever want to do queued instead async then the
         // queue should be external and a property of the object the conference

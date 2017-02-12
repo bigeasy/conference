@@ -12,7 +12,6 @@ var Monotonic = require('monotonic').asString
 var coalesce = require('nascent.coalesce')
 
 var logger = require('prolific.logger').createLogger('conference')
-var interrupt = require('interrupt').createInterrupter('conference')
 
 var Operation = require('operation')
 
@@ -124,6 +123,7 @@ Dispatcher.prototype.fromBasin = function (envelope, callback) {
 }
 
 function Conference (object, constructor) {
+    logger.info('constructed', {})
     this.isLeader = false
     this.colleague = null
     this.replaying = false

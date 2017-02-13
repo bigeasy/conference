@@ -112,8 +112,8 @@ function prove (async, assert) {
         }, async())
         assert(requests.shift(), {
             module: 'conduit',
-            to: 'conference',
-            from: 'conference',
+            to: 'colleague',
+            from: 'colleague',
             cookie: '1',
             body: {
                 module: 'conference',
@@ -130,7 +130,7 @@ function prove (async, assert) {
         conference.spigot.responses.enqueue({
             module: 'conduit',
             method: 'request',
-            to: 'conference',
+            to: 'colleague',
             cookie: '1',
             body: 2
         }, async())
@@ -426,8 +426,8 @@ function prove (async, assert) {
         }, async())
         assert(requests.shift(), {
             module: 'conduit',
-            to: 'conference',
-            from: 'conference',
+            to: 'colleague',
+            from: 'colleague',
             cookie: '1',
             body: {
                 module: 'conference',
@@ -439,8 +439,8 @@ function prove (async, assert) {
         }, 'out of band backlog request')
         conference.spigot.responses.push({
             module: 'conduit',
-            to: 'conference',
-            from: 'conference',
+            to: 'colleague',
+            from: 'colleague',
             cookie: '1',
             body: {
                 'double[1/0](1)': {

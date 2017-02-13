@@ -104,9 +104,13 @@ function Dispatcher (conference) {
     this._conference = conference
 }
 
-Dispatcher.prototype.request = function (envelope, callback) {
-    this._conference._outOfBand(envelope, callback)
-}
+Dispatcher.prototype.request = cadence(function (async, envelope) {
+    async(function () {
+        this._conference._request(envelope, async())
+    }, function (response) {
+        return [ response ]
+    })
+})
 
 Dispatcher.prototype.fromBasin = function (envelope, callback) {
     switch (envelope.method) {
@@ -143,7 +147,7 @@ function Conference (object, constructor) {
     // method and return the result. If the message is not an out of band
     // requests it is a message that does not expect a response. It will flow
     // into the `Basin` where we'll dispatch it and send to response.
-    var responder = new Responder(this._dispatcher, 'conference')
+    var responder = new Responder(this._dispatcher, 'colleague')
     var basin = new Basin(this._dispatcher)
 
     responder.spigot.emptyInto(basin)
@@ -152,7 +156,7 @@ function Conference (object, constructor) {
     this.basin = responder.basin
 
     // Round trip events used to perform requests for out-of-band data.
-    this._requester = new Requester('conference')
+    this._requester = new Requester('colleague')
     this.spigot = this._requester.spigot
 
     // An internal spigot that flows thorugh the requester used to publish and
@@ -211,10 +215,10 @@ Conference.prototype.getProperties = function (id) {
 // HTTP status codes and throwing them as integer.
 
 //
-Conference.prototype._outOfBand = cadence(function (async, envelope) {
+Conference.prototype._request = cadence(function (async, envelope) {
     switch (envelope.method) {
-    case 'connect':
-        return [ this.properties ]
+    case 'properties':
+        return [ this._properties ]
     case 'outOfBand':
         envelope = envelope.body
         this._operate('request', envelope.method, [ envelope.body ], async())
@@ -244,7 +248,7 @@ Conference.prototype._join = cadence(function (async, join) {
 
 Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
-        this._requester.request('conference', {
+        this._requester.request('colleague', {
             module: 'conference',
             method: 'backlog',
             to: this.government.majority[0],
@@ -400,7 +404,7 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
 
 //
 Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
-    this._requester.request('conference', {
+    this._requester.request('colleague', {
         // Do not think it odd that this is nested and `'backlog'` is not.
         // It reflects that one is system internal and the other is four our
         // dear user.

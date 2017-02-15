@@ -113,6 +113,9 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
 })
 
 Dispatcher.prototype.fromBasin = function (envelope, callback) {
+    if (envelope == null) {
+        return
+    }
     switch (envelope.method) {
     case 'join':
         this._conference._join(envelope.body, callback)
@@ -218,6 +221,8 @@ Conference.prototype.getProperties = function (id) {
 Conference.prototype._request = cadence(function (async, envelope) {
     switch (envelope.method) {
     case 'properties':
+        this.id = envelope.body.id
+        this.replaying = envelope.body.replaying
         return [ this._properties ]
     case 'outOfBand':
         envelope = envelope.body
@@ -296,7 +301,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
 })
 
 Conference.prototype._entry = cadence(function (async, entry) {
-    if (entry.government) {
+    if (entry.method == 'government') {
         this.government = entry.body
         this.isLeader = this.government.majority[0] == this.id
         var properties = entry.properties

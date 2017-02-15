@@ -73,7 +73,7 @@ function prove (async, assert) {
     var immigrate = {
         module: 'paxos',
         promise: '1/0',
-        government: true,
+        method: 'government',
         body: {
             module: 'paxos',
             promise: '1/0',
@@ -146,7 +146,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '2/0',
-                government: true,
+                method: 'government',
                 body: {
                     module: 'paxos',
                     promise: '2/0',
@@ -189,7 +189,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '2/1',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'naturalized',
@@ -246,7 +246,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '2/2',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'broadcast',
@@ -272,7 +272,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '2/3',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'reduce',
@@ -288,7 +288,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '2/4',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'reduce',
@@ -315,7 +315,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '3/3',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'broadcast',
@@ -341,7 +341,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '3/4',
-                government: false,
+                method: 'entry',
                 body: {
                     module: 'conference',
                     method: 'reduce',
@@ -358,7 +358,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '3/0',
-                government: true,
+                method: 'government',
                 body: {
                     module: 'paxos',
                     promise: '3/0',
@@ -388,7 +388,7 @@ function prove (async, assert) {
         immigrate = {
             module: 'paxos',
             promise: '3/0',
-            government: true,
+            method: 'government',
             body: {
                 module: 'paxos',
                 promise: '3/0',
@@ -471,7 +471,7 @@ function prove (async, assert) {
             body: {
                 module: 'paxos',
                 promise: '4/0',
-                government: true,
+                method: 'government',
                 body: {
                     module: 'paxos',
                     promise: '4/0',

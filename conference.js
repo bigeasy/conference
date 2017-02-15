@@ -112,22 +112,30 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
     })
 })
 
-Dispatcher.prototype.fromBasin = function (envelope, callback) {
+// TODO Everything should go through a single pipe to preserve replayability.
+// Even out-of-band and recordings, which means that on-boarding could become
+// costly.
+Dispatcher.prototype.fromBasin = cadence(function (async, envelope) {
     if (envelope == null) {
         return
     }
     switch (envelope.method) {
     case 'join':
-        this._conference._join(envelope.body, callback)
+        this._conference._join(envelope.body, async())
         break
     case 'entry':
-        this._conference._entry(envelope.body, callback)
+        this._conference._spigot.requests.push({
+            module: 'conference',
+            method: 'entry',
+            body: { promise: envelope.body.promise }
+        })
+        this._conference._entry(envelope.body, async())
         break
     case 'replay':
-        this._conference._replay(envelope.body, callback)
+        this._conference._replay(envelope.body, async())
         break
     }
-}
+})
 
 function Conference (object, constructor) {
     logger.info('constructed', {})
@@ -151,9 +159,9 @@ function Conference (object, constructor) {
     // requests it is a message that does not expect a response. It will flow
     // into the `Basin` where we'll dispatch it and send to response.
     var responder = new Responder(this._dispatcher, 'colleague')
-    var basin = new Basin(this._dispatcher)
+    this._basin = new Basin(this._dispatcher)
 
-    responder.spigot.emptyInto(basin)
+    responder.spigot.emptyInto(this._basin)
 
     // The basin into which events flow form the network.
     this.basin = responder.basin
@@ -186,6 +194,33 @@ Conference.prototype._nextCookie = function () {
 Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
     if (!this.replaying) {
         new Operation(operation).apply([ async() ])
+    }
+})
+
+function Recorder (conference) {
+    this._conference = conference
+}
+
+Recorder.prototype.record = cadence(function (async, method, message) {
+    this._conference._spigot.requests.push({
+        module: 'conference',
+        method: 'record',
+        body: {
+            method: method,
+            body: message
+        }
+    })
+    this._conference._replay({ method: method, body: message }, async())
+})
+
+Conference.prototype.record = cadence(function (async, f) {
+    this._spigot.requests.push({
+        module: 'conference',
+        method: 'recording',
+        body: null
+    })
+    if (!this.replaying) {
+        f(new Recorder(this._spigot), async())
     }
 })
 

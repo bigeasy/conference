@@ -1,4 +1,4 @@
-require('proof/redux')(27, require('cadence')(prove))
+require('proof/redux')(35, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -111,6 +111,11 @@ function prove (async, assert) {
             body: immigrate
         }, async())
         assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '1/0' }
+        }, 'entry recorded')
+        assert(requests.shift(), {
             module: 'conduit',
             to: 'colleague',
             from: 'colleague',
@@ -163,6 +168,11 @@ function prove (async, assert) {
             }
         }, async())
     }, function () {
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '2/0' }
+        }, 'entry 2/0 begin')
         assert(conference.government, {
             module: 'paxos',
             promise: '2/0',
@@ -198,6 +208,11 @@ function prove (async, assert) {
             }
         }, async())
     }, function () {
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '2/1' }
+        }, 'entry 2/1 begin')
         dispatcher.request({
             module: 'conference',
             method: 'backlog',
@@ -261,6 +276,11 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
+            method: 'entry',
+            body: { promise: '2/2' }
+        }, 'entry 2/2 begin')
+        assert(requests.shift(), {
+            module: 'conference',
             method: 'reduce',
             from: '1/0',
             key: 'message[1/0](1)',
@@ -299,6 +319,16 @@ function prove (async, assert) {
             }
         }, async())
     }, function () {
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '2/3' }
+        }, 'entry 2/3 begin')
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '2/4' }
+        }, 'entry 2/4 begin')
         reactor.messages = cadence(function (async, responses, request) {
             assert({
                 responses: responses,
@@ -328,6 +358,11 @@ function prove (async, assert) {
             }
         }, async())
     }, function () {
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '3/3' }
+        }, 'entry 3/3 begin')
         assert(requests.shift(), {
             module: 'conference',
             method: 'reduce',
@@ -424,6 +459,11 @@ function prove (async, assert) {
             method: 'entry',
             body: immigrate
         }, async())
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'entry',
+            body: { promise: '3/0' }
+        }, 'entry 3/0 begin')
         assert(requests.shift(), {
             module: 'conduit',
             to: 'colleague',

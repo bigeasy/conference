@@ -199,12 +199,19 @@ Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
 
 function Recorder (conference) {
     this._conference = conference
-}
-
-Recorder.prototype.record = cadence(function (async, method, message) {
     this._conference._spigot.requests.push({
         module: 'conference',
         method: 'record',
+        body: null
+    })
+}
+
+// Note that we don't wait on enqueuing the request, but we do wait on replay.
+// Replay is independent of the consensus algorithm.
+Recorder.prototype.record = cadence(function (async, method, message) {
+    this._conference._spigot.requests.push({
+        module: 'conference',
+        method: 'play',
         body: {
             method: method,
             body: message
@@ -213,16 +220,26 @@ Recorder.prototype.record = cadence(function (async, method, message) {
     this._conference._replay({ method: method, body: message }, async())
 })
 
-Conference.prototype.record = cadence(function (async, f) {
-    this._spigot.requests.push({
-        module: 'conference',
-        method: 'recording',
-        body: null
-    })
+Conference.prototype._record = cadence(function (async, f) {
     if (!this.replaying) {
-        f(new Recorder(this._spigot), async())
+        f(new Recorder(this), async())
     }
 })
+
+Conference.prototype.record = function () {
+    if (arguments.length == 2) {
+        this._record(arguments[0], arguments[1])
+    } else {
+        var async = arguments[0], conference = this
+        return function () {
+            var  recorder = new Recorder(conference)
+            if (!this.replaying) {
+                var vargs = Array.prototype.slice.call(arguments)
+                async.apply(null, [function () { return [ recorder ] }].concat(vargs))
+            }
+        }
+    }
+}
 
 // TODO Why sometimes wait? I don't want to wait on naturalized. I'm assuming
 // that we're not going to publish much, and that we're not going to wait for
@@ -458,20 +475,6 @@ Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
             body: body
         }
     }, async())
-})
-
-// Note that we don't wait on enqueuing the request, but we do wait on replay.
-// Replay is independent of the consensus algorithm.
-Conference.prototype.record = cadence(function (async, method, message) {
-    this._spigot.requests.push({
-        module: 'conference',
-        method: 'record',
-        body: {
-            method: method,
-            body: message
-        }
-    })
-    this._replay({ method: method, body: message }, async())
 })
 
 Conference.prototype._replay = cadence(function (async, record) {

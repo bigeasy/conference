@@ -4,12 +4,9 @@ function prove (async, assert) {
     var cadence = require('cadence')
     var reactor = {
         join: cadence(function (async) {
-            conference.ifNotReplaying(cadence(function (async) {
-                assert(true, 'if not replaying async')
-                async(function () {
-                    conference.record('catalog', 1, async())
-                })
-            }), async())
+            conference.record(async)(function (recorder) {
+                recorder.record('catalog', 1, async())
+            })
         }),
         catalog: cadence(function (async, value) {
             assert(value, 1, 'cataloged')
@@ -103,8 +100,13 @@ function prove (async, assert) {
         assert(requests.shift(), {
             module: 'conference',
             method: 'record',
+            body: null
+        }, 'recording started')
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'play',
             body: { method: 'catalog', body: 1 }
-        }, 'recorded')
+        }, 'play')
         dispatcher.fromBasin({
             module: 'colleague',
             method: 'entry',

@@ -1,4 +1,4 @@
-require('proof/redux')(36, require('cadence')(prove))
+require('proof/redux')(1, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
@@ -43,6 +43,8 @@ function prove (async, assert) {
         })
     }
     var Conference = require('..')
+    assert(Conference, 'require')
+    return
     var conference = new Conference(reactor, function (constructor) {
         constructor.join()
         constructor.immigrate(cadence(function (async, id) {

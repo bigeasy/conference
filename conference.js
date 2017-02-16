@@ -124,7 +124,7 @@ Dispatcher.prototype.fromBasin = cadence(function (async, envelope) {
         this._conference._join(envelope.body, async())
         break
     case 'entry':
-        this._conference._spigot.requests.push({
+        this._conference.spigot.requests.push({
             module: 'conference',
             method: 'entry',
             body: { promise: envelope.body.promise }
@@ -135,6 +135,9 @@ Dispatcher.prototype.fromBasin = cadence(function (async, envelope) {
         this._conference._replay(envelope.body, async())
         break
     }
+})
+
+Dispatcher.prototype.fromSpigot = cadence(function (async, envelope) {
 })
 
 function Conference (object, constructor) {

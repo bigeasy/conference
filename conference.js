@@ -124,11 +124,7 @@ Dispatcher.prototype.fromBasin = cadence(function (async, envelope) {
         this._conference._join(envelope.body, async())
         break
     case 'entry':
-        this._conference.spigot.requests.push({
-            module: 'conference',
-            method: 'entry',
-            body: { promise: envelope.body.promise }
-        })
+        this._conference.boundary('_entry', { promise: envelope.body.promise })
         this._conference._entry(envelope.body, async())
         break
     case 'replay':
@@ -147,6 +143,7 @@ function Conference (object, constructor) {
     this.replaying = false
     this.id = null
     this._cookie = '0'
+    this._boundary = '0'
     this._broadcasts = {}
     this._backlogs = {}
 
@@ -194,55 +191,50 @@ Conference.prototype._nextCookie = function () {
 // entries. If we are replaying we want to replay those out-of-band log entries.
 
 //
-Conference.prototype.ifNotReplaying = cadence(function (async, operation) {
+Conference.prototype._ifNotReplaying = cadence(function (async, operation) {
     if (!this.replaying) {
         new Operation(operation).apply([ async() ])
     }
 })
 
-function Recorder (conference) {
-    this._conference = conference
-    this._conference._spigot.requests.push({
-        module: 'conference',
-        method: 'record',
-        body: null
-    })
-}
-
-// Note that we don't wait on enqueuing the request, but we do wait on replay.
-// Replay is independent of the consensus algorithm.
-Recorder.prototype.record = cadence(function (async, method, message) {
-    this._conference._spigot.requests.push({
-        module: 'conference',
-        method: 'play',
-        body: {
-            method: method,
-            body: message
-        }
-    })
-    this._conference._replay({ method: method, body: message }, async())
-})
-
-Conference.prototype._record = cadence(function (async, f) {
-    if (!this.replaying) {
-        f(new Recorder(this), async())
-    }
-})
-
-Conference.prototype.record = function () {
+Conference.prototype.ifNotReplaying = function () {
+    this.boundary('_ifNotReplaying')
     if (arguments.length == 2) {
-        this._record(arguments[0], arguments[1])
+        this._ifNotReplaying(arguments[0], arguments[1])
     } else {
         var async = arguments[0], conference = this
         return function () {
-            var  recorder = new Recorder(conference)
             if (!this.replaying) {
-                var vargs = Array.prototype.slice.call(arguments)
-                async.apply(null, [function () { return [ recorder ] }].concat(vargs))
+                async.apply(null, Array.prototype.slice.call(arguments))
             }
         }
     }
 }
+
+Conference.prototype.boundary = function (name, context) {
+    var body = null
+    if (name != null) {
+        body = { name: name }
+        for (var key in context || (context = {})) {
+            body[key] = context[key]
+        }
+    }
+    this.spigot.requests.push({
+        module: 'conference',
+        method: 'boundary',
+        id: this._boundary = Monotonic.increment(this._boundary, 0),
+        body: body
+    })
+}
+
+Conference.prototype.record = cadence(function (async, method, message) {
+    this.spigot.requests.push({
+        module: 'conference',
+        method: 'record',
+        body: { method: method, body: message }
+    })
+    this._replay({ method: method, body: message }, async())
+})
 
 // TODO Why sometimes wait? I don't want to wait on naturalized. I'm assuming
 // that we're not going to publish much, and that we're not going to wait for

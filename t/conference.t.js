@@ -1,11 +1,11 @@
-require('proof/redux')(35, require('cadence')(prove))
+require('proof/redux')(36, require('cadence')(prove))
 
 function prove (async, assert) {
     var cadence = require('cadence')
     var reactor = {
-        join: cadence(function (async) {
-            conference.record(async)(function (recorder) {
-                recorder.record('catalog', 1, async())
+        join: cadence(function (async, conference) {
+            conference.ifNotReplaying(async)(function () {
+                conference.record('catalog', 1, async())
             })
         }),
         catalog: cadence(function (async, value) {
@@ -99,12 +99,13 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'record',
-            body: null
-        }, 'recording started')
+            method: 'boundary',
+            id: '1',
+            body: { name: '_ifNotReplaying' }
+        }, 'if not replaying when not replaying')
         assert(requests.shift(), {
             module: 'conference',
-            method: 'play',
+            method: 'record',
             body: { method: 'catalog', body: 1 }
         }, 'play')
         dispatcher.fromBasin({
@@ -114,8 +115,9 @@ function prove (async, assert) {
         }, async())
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '1/0' }
+            method: 'boundary',
+            id: '2',
+            body: { name: '_entry', promise: '1/0' }
         }, 'entry recorded')
         assert(requests.shift(), {
             module: 'conduit',
@@ -172,8 +174,9 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '2/0' }
+            method: 'boundary',
+            id: '3',
+            body: { name: '_entry', promise: '2/0' }
         }, 'entry 2/0 begin')
         assert(conference.government, {
             module: 'paxos',
@@ -212,8 +215,9 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '2/1' }
+            method: 'boundary',
+            id: '4',
+            body: { name: '_entry', promise: '2/1' }
         }, 'entry 2/1 begin')
         dispatcher.request({
             module: 'conference',
@@ -278,8 +282,9 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '2/2' }
+            method: 'boundary',
+            id: '5',
+            body: { name: '_entry', promise: '2/2' }
         }, 'entry 2/2 begin')
         assert(requests.shift(), {
             module: 'conference',
@@ -323,13 +328,15 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '2/3' }
+            method: 'boundary',
+            id: '6',
+            body: { name: '_entry', promise: '2/3' }
         }, 'entry 2/3 begin')
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '2/4' }
+            method: 'boundary',
+            id: '7',
+            body: { name: '_entry', promise: '2/4' }
         }, 'entry 2/4 begin')
         reactor.messages = cadence(function (async, responses, request) {
             assert({
@@ -362,8 +369,9 @@ function prove (async, assert) {
     }, function () {
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '3/3' }
+            method: 'boundary',
+            id: '8',
+            body: { name: '_entry', promise: '3/3' }
         }, 'entry 3/3 begin')
         assert(requests.shift(), {
             module: 'conference',
@@ -463,8 +471,15 @@ function prove (async, assert) {
         }, async())
         assert(requests.shift(), {
             module: 'conference',
-            method: 'entry',
-            body: { promise: '3/0' }
+            method: 'boundary',
+            id: '1',
+            body: { name: '_ifNotReplaying' }
+        }, 'if not replaying when replaying')
+        assert(requests.shift(), {
+            module: 'conference',
+            method: 'boundary',
+            id: '2',
+            body: { name: '_entry', promise: '3/0' }
         }, 'entry 3/0 begin')
         assert(requests.shift(), {
             module: 'conduit',

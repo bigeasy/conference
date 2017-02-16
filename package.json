@@ -24,6 +24,7 @@
     {
                             "abend":                        "1.0.x",
                             "cadence":                      "1.0.x",
+                            "cliffhanger":                  "1.4.x",
                             "conduit":                      "0.1.x",
                             "monotonic":                    "2.0.x",
                             "nascent.coalesce":             "0.0.0",

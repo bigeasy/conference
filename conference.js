@@ -6,6 +6,7 @@ var util = require('util')
 var abend = require('abend')
 var cadence = require('cadence')
 
+var Cliffhanger = require('cliffhanger')
 
 var Monotonic = require('monotonic').asString
 
@@ -44,10 +45,11 @@ var Basin = require('conduit/basin')
 // about as immutable as JavaScript is going to get.
 
 //
-function Constructor (properties, object, operations) {
+function Constructor (conference, properties, object, operations) {
     this._object = object
     this._operations = operations
     this._properties = properties
+    this._setOperation('!receive', 'welcomed', { object: conference, method: 'welcomed' })
 }
 
 Constructor.prototype._setOperation = function (qualifier, name, operation) {
@@ -66,6 +68,10 @@ Constructor.prototype.setProperties = function (properties) {
     for (var name in properties) {
         this._properties[name] = properties[name]
     }
+}
+
+Constructor.prototype.bootstrap = function (method) {
+    this._setOperation('internal', 'join', coalesce(method, 'join'))
 }
 
 Constructor.prototype.join = function (method) {
@@ -142,6 +148,7 @@ function Conference (object, constructor) {
     this.colleague = null
     this.replaying = false
     this.id = null
+    this._welcomes = {}
     this._cookie = '0'
     this._boundary = '0'
     this._broadcasts = {}
@@ -175,7 +182,9 @@ function Conference (object, constructor) {
     this._spigot = new Spigot(this._dispatcher)
     this._spigot.emptyInto(this._requester.basin)
 
-    constructor(new Constructor(this._properties = {}, object, this._operations = {}))
+    this._cliffhanger = new Cliffhanger
+
+    constructor(new Constructor(this, this._properties = {}, object, this._operations = {}))
 }
 
 // An ever increasing identify to adorn our broadcasts so that it's key will be
@@ -347,21 +356,40 @@ Conference.prototype._getBacklog = cadence(function (async) {
     })
 })
 
+Conference.prototype.makeWelcome = function (welcome) {
+    assert(this.government.immigrated != null, 'can only be called during immigration')
+    this._welcomes[this.government.promise] = welcome
+}
+
+Conference.prototype.welcomed = cadence(function (async, conference, promise) {
+    delete this._welcomes[promise]
+})
+
 Conference.prototype._entry = cadence(function (async, entry) {
     if (entry.method == 'government') {
         this.government = entry.body
         this.isLeader = this.government.majority[0] == this.id
         var properties = entry.properties
         async(function () {
-            if (this.government.immigrant) {
-                var immigrant = this.government.immigrant
+            if (this.government.immigrated) {
+                var immigrant = this.government.immigrated
                 async(function () {
-                    this._operate('internal', 'immigrate', [ immigrant.id ], async())
+                    if (this.government.promise == '1/0') {
+                        this._operate('internal', 'bootstrap', [ this ], async())
+                    } else if (this.government.immigrant.id == this._kibitzer.paxos.id) {
+                        this._operate('internal', 'join', [ this ], async())
+                    }
+                }, function () {
+                    this._operate('internal', 'immigrate', [ this, immigrant.id ], async())
                 }, function () {
                     if (immigrant.id != this.id) {
                         this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())
+                    }
+                }, function () {
+                    if (this.government.promise == '1/0' || immigrant.id == this.id) {
+                        this._broadcast(true, 'welcomed', this.government.promise)
                     }
                 })
             } else if (this.government.exile) {
@@ -384,29 +412,32 @@ Conference.prototype._entry = cadence(function (async, entry) {
         }, function () {
             this._operate('internal', 'government', [ this ], async())
         })
-    } else {
+    } else if (entry.body.body) {
         // Reminder that if you ever want to do queued instead async then the
         // queue should be external and a property of the object the conference
         // operates.
 
         //
-        var envelope = entry.body
+        var envelope = entry.body.body
         switch (envelope.method) {
         case 'broadcast':
             this._broadcasts[envelope.key] = {
                 key: envelope.key,
+                internal: envelope.internal,
                 method: envelope.body.method,
                 request: envelope.body.body,
                 responses: {}
             }
+            prefix = envelope.internal ? '!' : ''
             async(function () {
-                this._operate('receive', envelope.body.method, [ envelope.body.body ], async())
+                this._operate(prefix + 'receive', envelope.body.method, [ this, envelope.body.body ], async())
             }, function (response) {
-                this._spigot.requests.push({
+                this.spigot.requests.push({
                     module: 'conference',
                     method: 'reduce',
-                    from: this.government.immigrated.promise[this.id],
                     key: envelope.key,
+                    internal: envelope.internal,
+                    from: this.government.immigrated.promise[this.id],
                     body: response
                 })
             })
@@ -446,7 +477,8 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
                 value: broadcast.responses[promise]
             })
         }
-        this._operate('reduced', broadcast.method, [ reduced, broadcast.request ], async())
+        var prefix = broadcast.internal ? '!' : ''
+        this._operate(prefix + 'reduced', broadcast.method, [ reduced, broadcast.request ], async())
         delete this._broadcasts[broadcast.key]
     }
 })
@@ -455,21 +487,21 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
 // expires, and maybe that is the entirety of out-of-band.
 
 //
-Conference.prototype.outOfBand = cadence(function (async, to, method, body) {
-    this._requester.request('colleague', {
+Conference.prototype.request = cadence(function (async, method, body) {
+    this.spigot.requests.push({
         // Do not think it odd that this is nested and `'backlog'` is not.
         // It reflects that one is system internal and the other is four our
         // dear user.
         module: 'conference',
-        method: 'outOfBand',
+        method: 'request',
         body: {
             module: 'conference',
             method: method,
-            to: this.government.majority[0],
+            cookie: this._cliffhanger.invoke(async()),
             from: this.government.promise,
             body: body
         }
-    }, async())
+    })
 })
 
 Conference.prototype._replay = cadence(function (async, record) {
@@ -490,13 +522,14 @@ Conference.prototype._replay = cadence(function (async, record) {
 // that error will crash this participant.
 
 //
-Conference.prototype.broadcast = function (method, message) {
+Conference.prototype._broadcast = function (internal, method, message) {
     var cookie = this._nextCookie()
     var uniqueId = this.government.immigrated.promise[this.id]
     var key = method + '[' + uniqueId + '](' + cookie + ')'
-    this._spigot.requests.push({
+    this.spigot.requests.push({
         module: 'conference',
         method: 'broadcast',
+        internal: internal,
         key: key,
         body: {
             module: 'conference',
@@ -504,6 +537,10 @@ Conference.prototype.broadcast = function (method, message) {
             body: message
         }
     })
+}
+
+Conference.prototype.broadcast = function (method, message) {
+    this._broadcast(false, method, message)
 }
 
 module.exports = Conference

@@ -221,9 +221,9 @@ Conference.prototype.ifNotReplaying = function () {
 }
 
 Conference.prototype.boundary = function (name, context) {
-    var body = null
+    var body = {}
     if (name != null) {
-        body = { name: name }
+        body.name = name
         for (var key in context || (context = {})) {
             body[key] = context[key]
         }

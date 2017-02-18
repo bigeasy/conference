@@ -376,7 +376,7 @@ Conference.prototype._entry = cadence(function (async, entry) {
                 async(function () {
                     if (this.government.promise == '1/0') {
                         this._operate('internal', 'bootstrap', [ this ], async())
-                    } else if (this.government.immigrant.id == this._kibitzer.paxos.id) {
+                    } else if (immigrant.id == this.id) {
                         this._operate('internal', 'join', [ this ], async())
                     }
                 }, function () {

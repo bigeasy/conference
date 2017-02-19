@@ -8,6 +8,8 @@ var cadence = require('cadence')
 
 var Cliffhanger = require('cliffhanger')
 
+var Procession = require('procession')
+
 var Monotonic = require('monotonic').asString
 
 var coalesce = require('nascent.coalesce')
@@ -27,6 +29,10 @@ var Responder = require('conduit/responder')
 
 // Consume events from an evented message queue.
 var Basin = require('conduit/basin')
+
+function keyify () {
+    return '[' + Array.prototype.slice.call(arguments).join('][') + ']'
+}
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
@@ -49,15 +55,16 @@ function Constructor (conference, properties, object, operations) {
     this._object = object
     this._operations = operations
     this._properties = properties
-    this._setOperation('!receive', 'welcomed', { object: conference, method: 'welcomed' })
+    this._setOperation(keyify(true, 'receive', 'naturalized'), { object: conference, method: '_naturalized' })
+    this._setOperation(keyify(true, 'request', 'backlog'), { object: conference, method: '_backlog' })
 }
 
-Constructor.prototype._setOperation = function (qualifier, name, operation) {
+Constructor.prototype._setOperation = function (key, operation) {
     if (typeof operation == 'string') {
         assert(this._object, 'object cannot be null')
         operation = { object: this._object, method: operation }
     }
-    this._operations[qualifier + ':' + name] = new Operation(operation)
+    this._operations[key] = new Operation(operation)
 }
 
 Constructor.prototype.setProperty = function (name, value) {
@@ -71,39 +78,43 @@ Constructor.prototype.setProperties = function (properties) {
 }
 
 Constructor.prototype.bootstrap = function (method) {
-    this._setOperation('internal', 'join', coalesce(method, 'join'))
+    this._setOperation(keyify('bootstrap'), coalesce(method, 'join'))
 }
 
 Constructor.prototype.join = function (method) {
-    this._setOperation('internal', 'join', coalesce(method, 'join'))
+    this._setOperation(keyify('join'), coalesce(method, 'join'))
 }
 
 Constructor.prototype.immigrate = function (method) {
-    this._setOperation('internal', 'immigrate', coalesce(method, 'immigrate'))
+    this._setOperation(keyify('immigrate'), coalesce(method, 'immigrate'))
+}
+
+Constructor.prototype.naturalize = function (method) {
+    this._setOperation(keyify('naturalize'), coalesce(method, 'naturalize'))
 }
 
 Constructor.prototype.exile = function (method) {
-    this._setOperation('internal', 'exile', coalesce(method, 'exile'))
+    this._setOperation(keyify('exile'), coalesce(method, 'exile'))
 }
 
 Constructor.prototype.government = function (method) {
-    this._setOperation('internal', 'government', coalesce(method, 'government'))
+    this._setOperation(keyify('government'), coalesce(method, 'government'))
 }
 
 Constructor.prototype.receive = function (name, method) {
-    this._setOperation('receive', name, coalesce(method, name))
+    this._setOperation(keyify(false, 'receive', name), coalesce(method, name))
 }
 
 Constructor.prototype.reduced = function (name, method) {
-    this._setOperation('reduced', name, coalesce(method, name))
+    this._setOperation(keyify(false, 'reduced', name), coalesce(method, name))
 }
 
 Constructor.prototype.request = function (name, method) {
-    this._setOperation('request', name, coalesce(name, method))
+    this._setOperation(keyify(false, 'request', name), coalesce(name, method))
 }
 
 Constructor.prototype.catalog = function (name, method) {
-    this._setOperation('catalog', name, coalesce(name, method))
+    this._setOperation(keyify(false, 'catalog', name), coalesce(name, method))
 }
 
 function Dispatcher (conference) {
@@ -118,29 +129,13 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
     })
 })
 
-// TODO Everything should go through a single pipe to preserve replayability.
-// Even out-of-band and recordings, which means that on-boarding could become
-// costly.
-Dispatcher.prototype.fromBasin = cadence(function (async, envelope) {
-    if (envelope == null) {
-        return
-    }
-    switch (envelope.method) {
-    case 'join':
-        this._conference._join(envelope.body, async())
-        break
-    case 'entry':
-        this._conference.boundary('_entry', { promise: envelope.body.promise })
-        this._conference._entry(envelope.body, async())
-        break
-    case 'replay':
-        this._conference._replay(envelope.body, async())
-        break
-    }
-})
+Dispatcher.prototype.fromBasin = function (envelope, callback) {
+    this._conference._fromBasin(envelope, callback)
+}
 
-Dispatcher.prototype.fromSpigot = cadence(function (async, envelope) {
-})
+Dispatcher.prototype.fromSpigot = function (envelope, callback) {
+    this._conference._fromSpigot(envelope, callback)
+}
 
 function Conference (object, constructor) {
     logger.info('constructed', {})
@@ -153,6 +148,9 @@ function Conference (object, constructor) {
     this._boundary = '0'
     this._broadcasts = {}
     this._backlogs = {}
+
+    this._records = new Procession
+    this._replays = this._records.shifter()
 
     // Currently exposed for testing, but feeling that these method should be
     // public for general testing, with one wrapper that hooks it up to the
@@ -195,55 +193,147 @@ Conference.prototype._nextCookie = function () {
     return this._cookie = Monotonic.increment(this._cookie, 0)
 }
 
+Conference.prototype._nextBoundary = function () {
+    return this._boundary = Monotonic.increment(this._boundary, 0)
+}
+
+Conference.prototype._fromBasin = cadence(function (async, envelope) {
+    if (envelope == null) {
+        return
+    }
+    switch (envelope.method) {
+    case 'entry':
+        this.spigot.requests.push({
+            module: 'conference',
+            method: 'boundary',
+            id: this._nextBoundary(),
+            entry: envelope.body.promise
+        })
+        this._entry(envelope.body, async())
+        break
+    case 'replay':
+        this._replay(envelope.body, async())
+        break
+    }
+})
+
+Conference.prototype._fromSpigot = cadence(function (async, envelope) {
+    assert(envelope == null || envelope.method == 'record')
+    if (envelope == null) {
+        return
+    }
+    assert(envelope.method == 'record')
+    console.log(envelope)
+    this._records.enqueue(envelope, async())
+})
+
 // Run the given operation if we are not replaying a log. If we are not
 // replaying then we are performing actions that generate out-of-band log
 // entries. If we are replaying we want to replay those out-of-band log entries.
 
 //
 Conference.prototype._ifNotReplaying = cadence(function (async, operation) {
+    if (this.replaying) {
+        throw new Error(1)
+    }
     if (!this.replaying) {
         new Operation(operation).apply([ async() ])
     }
 })
 
 Conference.prototype.ifNotReplaying = function () {
-    this.boundary('_ifNotReplaying')
+    this.boundary()
     if (arguments.length == 2) {
         this._ifNotReplaying(arguments[0], arguments[1])
     } else {
         var async = arguments[0], conference = this
         return function () {
-            if (!this.replaying) {
+            if (!conference.replaying) {
                 async.apply(null, Array.prototype.slice.call(arguments))
             }
         }
     }
 }
 
-Conference.prototype.boundary = function (name, context) {
-    var body = {}
-    if (name != null) {
-        body.name = name
-        for (var key in context || (context = {})) {
-            body[key] = context[key]
+Conference.prototype._record_ = cadence(function (async, operation) {
+    async(function () {
+        var id = this._boundary = Monotonic.increment(this._boundary, 0)
+        if (conference.replaying) {
+            async(function () {
+                this._records.dequeue(async())
+            }, function (envelope) {
+                assert(envelope.id == envelope.id)
+                return envelope.body.body
+            })
+        } else {
+            async.apply(null, Array.prototype.slice.call(arguments))
+        }
+    }, function (result) {
+        result = coalesce(result)
+        this.spigot.requests.push({
+            module: 'conference',
+            method: 'record',
+            id: id,
+            body: { internal: true, body: result }
+        })
+        return [ result ]
+    })
+})
+
+Conference.prototype.record_ = function () {
+    if (arguments.length == 2) {
+        this._record_(arguments[0], arguments[1])
+    } else {
+        var async = arguments[0], conference = this
+        return function () {
+            var id = conference._nextBoundary()
+            var steps = Array.prototype.slice.call(arguments)
+            async(function () {
+                if (conference.replaying) {
+                    async(function () {
+                        conference._replays.dequeue(async())
+                    }, function (envelope) {
+                        assert(envelope.id == envelope.id)
+                        return envelope.body.body
+                    })
+                } else {
+                    async.apply(null, steps)
+                }
+            }, function (result) {
+                result = coalesce(result)
+                conference.spigot.requests.push({
+                    module: 'conference',
+                    method: 'record',
+                    id: id,
+                    body: { internal: true, body: result }
+                })
+                return [ result ]
+            })
         }
     }
+}
+
+Conference.prototype.boundary = function () {
     this.spigot.requests.push({
         module: 'conference',
         method: 'boundary',
         id: this._boundary = Monotonic.increment(this._boundary, 0),
-        body: body
+        entry: null
     })
 }
 
-Conference.prototype.record = cadence(function (async, method, message) {
+Conference.prototype._record = cadence(function (async, internal, method, message) {
     this.spigot.requests.push({
         module: 'conference',
         method: 'record',
-        body: { method: method, body: message }
+        body: { internal: internal, method: method, body: coalesce(message) }
     })
-    this._replay({ method: method, body: message }, async())
+    this._replay({ internal: internal, method: method, body: message }, async())
 })
+
+Conference.prototype.record = function (method, message, callback) {
+    this._record(false, method, message, callback)
+}
 
 // TODO Why sometimes wait? I don't want to wait on naturalized. I'm assuming
 // that we're not going to publish much, and that we're not going to wait for
@@ -282,40 +372,38 @@ Conference.prototype._request = cadence(function (async, envelope) {
         return [ this._properties ]
     case 'outOfBand':
         envelope = envelope.body
-        this._operate('request', envelope.method, [ envelope.body ], async())
+        this._operate(keyify(envelope.internal, 'request', envelope.method), [ this, envelope.body ], async())
         break
-    case 'backlog':
-        return [ coalesce(this._backlogs[envelope.from]) ]
     }
 })
 
-Conference.prototype._getOperation = function (qualifier, name) {
-    return this._operations[qualifier + ':' + name]
-}
+Conference.prototype._backlog = cadence(function (async, conference, promise) {
+    return [ this._backlogs[promise] ]
+})
 
-Conference.prototype._operate = cadence(function (async, qualifier, method, vargs) {
-    var operation = this._getOperation(qualifier, method)
+Conference.prototype._operate = cadence(function (async, key, vargs) {
+    var operation = this._operations[key]
     if (operation == null) {
         return null
     }
     operation.apply(vargs.concat(async()))
 })
 
-Conference.prototype._join = cadence(function (async, join) {
-    this.replaying = join.replaying
-    this.id = join.id
-    this._operate('internal', 'join', [ this ], async())
-})
-
 Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
-        this._requester.request('colleague', {
-            module: 'conference',
-            method: 'backlog',
-            to: this.government.majority[0],
-            from: this.government.promise,
-            body: null
-        }, 'conference', async())
+        this.record_(async)(function () {
+            this._requester.request('colleague', {
+                module: 'conference',
+                method: 'outOfBand',
+                to: this.government.majority[0],
+                body: {
+                    module: 'conference',
+                    method: 'backlog',
+                    internal: true,
+                    body: this.government.promise
+                }
+            }, async())
+        })
     }, function (broadcasts) {
         var entries = []
         for (var key in broadcasts) {
@@ -361,8 +449,8 @@ Conference.prototype.makeWelcome = function (welcome) {
     this._welcomes[this.government.promise] = welcome
 }
 
-Conference.prototype.welcomed = cadence(function (async, conference, promise) {
-    delete this._welcomes[promise]
+Conference.prototype._naturalized = cadence(function (async, conference, promise) {
+    this._operate(keyify('naturalize'), [ this, promise ], async())
 })
 
 Conference.prototype._entry = cadence(function (async, entry) {
@@ -371,16 +459,16 @@ Conference.prototype._entry = cadence(function (async, entry) {
         this.isLeader = this.government.majority[0] == this.id
         var properties = entry.properties
         async(function () {
-            if (this.government.immigrated) {
-                var immigrant = this.government.immigrated
+            if (this.government.immigrate) {
+                var immigrant = this.government.immigrate
                 async(function () {
                     if (this.government.promise == '1/0') {
-                        this._operate('internal', 'bootstrap', [ this ], async())
+                        this._operate(keyify('bootstrap'), [ this ], async())
                     } else if (immigrant.id == this.id) {
-                        this._operate('internal', 'join', [ this ], async())
+                        this._operate(keyify('join'), [ this ], async())
                     }
                 }, function () {
-                    this._operate('internal', 'immigrate', [ this, immigrant.id ], async())
+                    this._operate(keyify('immigrate'), [ this, immigrant.id ], async())
                 }, function () {
                     if (immigrant.id != this.id) {
                         this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
@@ -389,13 +477,13 @@ Conference.prototype._entry = cadence(function (async, entry) {
                     }
                 }, function () {
                     if (this.government.promise == '1/0' || immigrant.id == this.id) {
-                        this._broadcast(true, 'welcomed', this.government.promise)
+                        this._broadcast(true, 'naturalized', this.government.promise)
                     }
                 })
             } else if (this.government.exile) {
                 var exile = this.government.exile
                 async(function () {
-                    this._operate('internal', 'exile', [ exile.id, exile.promise, exile.properties ], async())
+                    this._operate(keyify('exile'), [ this ], async())
                 }, function () {
                     var promise = this.government.exile.promise
                     var broadcasts = []
@@ -410,7 +498,7 @@ Conference.prototype._entry = cadence(function (async, entry) {
                 })
             }
         }, function () {
-            this._operate('internal', 'government', [ this ], async())
+            this._operate(keyify('government'), [ this ], async())
         })
     } else if (entry.body.body) {
         // Reminder that if you ever want to do queued instead async then the
@@ -430,7 +518,7 @@ Conference.prototype._entry = cadence(function (async, entry) {
             }
             prefix = envelope.internal ? '!' : ''
             async(function () {
-                this._operate(prefix + 'receive', envelope.body.method, [ this, envelope.body.body ], async())
+                this._operate(keyify(envelope.internal, 'receive', envelope.body.method), [ this, envelope.body.body ], async())
             }, function (response) {
                 this.spigot.requests.push({
                     module: 'conference',
@@ -477,35 +565,42 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
                 value: broadcast.responses[promise]
             })
         }
-        var prefix = broadcast.internal ? '!' : ''
-        this._operate(prefix + 'reduced', broadcast.method, [ reduced, broadcast.request ], async())
+        this._operate(keyify(broadcast.internal, 'reduced', broadcast.method), [ reduced, broadcast.request ], async())
         delete this._broadcasts[broadcast.key]
     }
 })
 
 // TODO Save welcomes, or introductions, and have them expire when the welcome
 // expires, and maybe that is the entirety of out-of-band.
+//
+// Any difficulties and this method will return `null`. Do not return `null` as
+// a valid response from your request handler.
 
 //
-Conference.prototype.request = cadence(function (async, method, body) {
-    this.spigot.requests.push({
-        // Do not think it odd that this is nested and `'backlog'` is not.
-        // It reflects that one is system internal and the other is four our
-        // dear user.
+Conference.prototype.request = cadence(function (async, to, method, body) {
+    if (arguments.length == 3) {
+       body = method
+       method = to
+       to = this.government.majority[0]
+    }
+    // TODO More consideration as to what happens when the route `to` cannot
+    // be found, and whether it makes sense to try to contact anyone but the
+    // leader for initialization.
+    this._requester.request('colleague', {
         module: 'conference',
-        method: 'request',
+        method: 'outOfBand',
+        to: to,
         body: {
             module: 'conference',
             method: method,
-            cookie: this._cliffhanger.invoke(async()),
-            from: this.government.promise,
+            internal: false,
             body: body
         }
-    })
+    }, async())
 })
 
 Conference.prototype._replay = cadence(function (async, record) {
-    this._operate('catalog', record.method, [ record.body ], async())
+    this._operate(keyify(record.internal, 'catalog', record.method), [ record.body ], async())
 })
 
 // Honoring back pressure here, but I've not considered if back pressure is

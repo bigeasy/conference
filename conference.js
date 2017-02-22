@@ -212,6 +212,7 @@ Conference.prototype._fromBasin = cadence(function (async, envelope) {
         this._entry(envelope.body, async())
         break
     case 'replay':
+        throw new Error
         this._replay(envelope.body, async())
         break
     }
@@ -222,9 +223,30 @@ Conference.prototype._fromSpigot = cadence(function (async, envelope) {
     if (envelope == null) {
         return
     }
+    // TODO Implicit here is that one form of record is only used during
+    // initialization, while another is only used after initialization. I do
+    // have two different implementations of the record function, and the
+    // direction to merge them is switch up based on how the function is called,
+    // so what we have here is a problem of a name collision. I want to describe
+    // this as recording, which it is, but there is more abstraction than that.
+    // There are concurrency issues. I've tried to imagine how you'd use the
+    // anonymous version of record after `join`, but I do not have good answers
+    // for that. For the applications I intend to write immediately.
+    //
+    // I'm resisting the direction I've taken numerous times. Over-engineering
+    // the ability to use `record` whenever, feeling bad about the complexity
+    // and performance costs, getting bitten by it down the road, eventually,
+    // longer after these decisions have been made, deciding, realizing that
+    // that no one is every going to use it that way, and then coming back and
+    // removing this.
+    //
     assert(envelope.method == 'record')
-    console.log(envelope)
-    this._records.enqueue(envelope, async())
+    if (envelope.body.internal) {
+        this._records.enqueue(envelope, async())
+    } else {
+        console.log('REPLAYING >>>>>', envelope)
+        this._replay(envelope.body, async())
+    }
 })
 
 // Run the given operation if we are not replaying a log. If we are not
@@ -600,7 +622,7 @@ Conference.prototype.request = cadence(function (async, to, method, body) {
 })
 
 Conference.prototype._replay = cadence(function (async, record) {
-    this._operate(keyify(record.internal, 'catalog', record.method), [ record.body ], async())
+    this._operate(keyify(record.internal, 'catalog', record.method), [ this, record.body ], async())
 })
 
 // Honoring back pressure here, but I've not considered if back pressure is

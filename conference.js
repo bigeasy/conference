@@ -78,7 +78,7 @@ Constructor.prototype.setProperties = function (properties) {
 }
 
 Constructor.prototype.bootstrap = function (method) {
-    this._setOperation(keyify('bootstrap'), coalesce(method, 'join'))
+    this._setOperation(keyify('bootstrap'), coalesce(method, 'bootstrap'))
 }
 
 Constructor.prototype.join = function (method) {

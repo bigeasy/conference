@@ -399,6 +399,8 @@ Conference.prototype._request = cadence(function (async, envelope) {
     }
 })
 
+Conference.prototype._connect = cadence
+
 Conference.prototype._backlog = cadence(function (async, conference, promise) {
     return [ this._backlogs[promise] ]
 })

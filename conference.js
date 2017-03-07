@@ -62,7 +62,7 @@ Constructor.prototype._setOperation = function (key, operation) {
         assert(this._object, 'object cannot be null')
         operation = { object: this._object, method: operation }
     }
-    this._operations[key] = new Operation(operation)
+    this._operations[key] = Operation(operation)
 }
 
 Constructor.prototype.setProperty = function (name, value) {
@@ -257,7 +257,7 @@ Conference.prototype._ifNotReplaying = cadence(function (async, operation) {
         throw new Error(1)
     }
     if (!this.replaying) {
-        new Operation(operation).apply([ async() ])
+        Operation(operation)(async())
     }
 })
 
@@ -408,7 +408,7 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
     if (operation == null) {
         return null
     }
-    operation.apply(vargs.concat(async()))
+    operation.apply(null, vargs.concat(async()))
 })
 
 Conference.prototype._getBacklog = cadence(function (async) {

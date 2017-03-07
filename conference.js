@@ -30,9 +30,7 @@ var Responder = require('conduit/responder')
 // Consume events from an evented message queue.
 var Basin = require('conduit/basin')
 
-function keyify () {
-    return '[' + Array.prototype.slice.call(arguments).join('][') + ']'
-}
+function keyify () { return JSON.stringify(Array.prototype.slice.call(arguments)) }
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have

@@ -2,6 +2,9 @@
 var assert = require('assert')
 var util = require('util')
 
+// TODO Bad.
+var abend = require('abend')
+
 // Control-flow utilities.
 var abend = require('abend')
 var cadence = require('cadence')
@@ -29,6 +32,8 @@ var Responder = require('conduit/responder')
 
 // Consume events from an evented message queue.
 var Basin = require('conduit/basin')
+
+var Interlocutor = require('interlocutor')
 
 function keyify () { return JSON.stringify(Array.prototype.slice.call(arguments)) }
 
@@ -397,7 +402,9 @@ Conference.prototype._request = cadence(function (async, envelope) {
     }
 })
 
-Conference.prototype._connect = cadence
+Conference.prototype.connect = function (socket, envelope) {
+    new Response(this._interlocutor, socket, envelope).respond(abend)
+}
 
 Conference.prototype._backlog = cadence(function (async, conference, promise) {
     return [ this._backlogs[promise] ]
@@ -619,6 +626,10 @@ Conference.prototype.request = cadence(function (async, to, method, body) {
             body: body
         }
     }, async())
+})
+
+Conference.prototype.socket = cadence(function (async, to, header) {
+    var properties = this.getProperties(to)
 })
 
 Conference.prototype._replay = cadence(function (async, record) {

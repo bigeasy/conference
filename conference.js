@@ -19,21 +19,16 @@ var coalesce = require('nascent.coalesce')
 
 var logger = require('prolific.logger').createLogger('conference')
 
-var Operation = require('operation')
+var Operation = require('operation/redux')
 
 // Invoke round trip requests into an evented message queue.
 var Requester = require('conduit/requester')
 
-// Emit events into an evented message queue.
-var Spigot = require('conduit/spigot')
-
 // Respond to requests from an evented message queue.
 var Responder = require('conduit/responder')
 
-// Consume events from an evented message queue.
-var Basin = require('conduit/basin')
-
-var Interlocutor = require('interlocutor')
+var Client = require('conduit/client')
+var Server = require('conduit/server')
 
 function keyify () { return JSON.stringify(Array.prototype.slice.call(arguments)) }
 
@@ -116,6 +111,10 @@ Constructor.prototype.request = function (name, method) {
     this._setOperation(keyify(false, 'request', name), coalesce(name, method))
 }
 
+Constructor.prototype.socket = function (name, method) {
+    this._setOperation(keyify('socket'), coalesce('socket', method))
+}
+
 Constructor.prototype.catalog = function (name, method) {
     this._setOperation(keyify(false, 'catalog', name), coalesce(name, method))
 }
@@ -162,26 +161,16 @@ function Conference (object, constructor) {
     //
     this._dispatcher = new Dispatcher(this)
 
-    // Events go first through a `Responder` which will invoke our out of band
-    // method and return the result. If the message is not an out of band
-    // requests it is a message that does not expect a response. It will flow
-    // into the `Basin` where we'll dispatch it and send to response.
-    var responder = new Responder(this._dispatcher, 'colleague')
-    this._basin = new Basin(this._dispatcher)
+    this.read = new Procession
+    this.write = new Procession
 
-    responder.spigot.emptyInto(this._basin)
+    this._client = new Client('outgoing', this.write, this.read)
+    var server = new Server({ object: this, method: '_connect' }, 'incoming', this._client.read, this._client.write)
+    var responder = new Responder(this._dispatcher, 'colleague', server.read, server.write)
+    this._requester = new Requester('colleague', responder.read, responder.write)
 
-    // The basin into which events flow form the network.
-    this.basin = responder.basin
-
-    // Round trip events used to perform requests for out-of-band data.
-    this._requester = new Requester('colleague')
-    this.spigot = this._requester.spigot
-
-    // An internal spigot that flows thorugh the requester used to publish and
-    // record.
-    this._spigot = new Spigot(this._dispatcher)
-    this._spigot.emptyInto(this._requester.basin)
+    this._write = this._requester.write
+    this._requester.read.pump(this)
 
     this._cliffhanger = new Cliffhanger
 
@@ -200,13 +189,13 @@ Conference.prototype._nextBoundary = function () {
     return this._boundary = Monotonic.increment(this._boundary, 0)
 }
 
-Conference.prototype._fromBasin = cadence(function (async, envelope) {
+Conference.prototype.enqueue = cadence(function (async, envelope) {
     if (envelope == null) {
         return
     }
     switch (envelope.method) {
     case 'entry':
-        this.spigot.requests.push({
+        this._write.push({
             module: 'conference',
             method: 'boundary',
             id: this._nextBoundary(),
@@ -217,6 +206,13 @@ Conference.prototype._fromBasin = cadence(function (async, envelope) {
     case 'replay':
         throw new Error
         this._replay(envelope.body, async())
+        break
+    case 'record':
+        if (envelope.body.internal) {
+            this._records.enqueue(envelope, async())
+        } else {
+            this._replay(envelope.body, async())
+        }
         break
     }
 })
@@ -247,7 +243,6 @@ Conference.prototype._fromSpigot = cadence(function (async, envelope) {
     if (envelope.body.internal) {
         this._records.enqueue(envelope, async())
     } else {
-        console.log('REPLAYING >>>>>', envelope)
         this._replay(envelope.body, async())
     }
 })
@@ -295,7 +290,8 @@ Conference.prototype._record_ = cadence(function (async, operation) {
         }
     }, function (result) {
         result = coalesce(result)
-        this.spigot.requests.push({
+        // TODO Rename the other one to `replay`, get rid of `internal`.
+        this._write.push({
             module: 'conference',
             method: 'record',
             id: id,
@@ -326,7 +322,7 @@ Conference.prototype.record_ = function () {
                 }
             }, function (result) {
                 result = coalesce(result)
-                conference.spigot.requests.push({
+                conference.write.push({
                     module: 'conference',
                     method: 'record',
                     id: id,
@@ -339,7 +335,7 @@ Conference.prototype.record_ = function () {
 }
 
 Conference.prototype.boundary = function () {
-    this.spigot.requests.push({
+    this._write.push({
         module: 'conference',
         method: 'boundary',
         id: this._boundary = Monotonic.increment(this._boundary, 0),
@@ -348,7 +344,7 @@ Conference.prototype.boundary = function () {
 }
 
 Conference.prototype._record = cadence(function (async, internal, method, message) {
-    this.spigot.requests.push({
+    this._write.push({
         module: 'conference',
         method: 'record',
         body: { internal: internal, method: method, body: coalesce(message) }
@@ -367,7 +363,7 @@ Conference.prototype.record = function (method, message, callback) {
 
 //
 Conference.prototype.naturalized = function () {
-    this._spigot.requests.push({
+    this._write.push({
         module: 'conference',
         method: 'naturalized',
         body: null
@@ -402,8 +398,10 @@ Conference.prototype._request = cadence(function (async, envelope) {
     }
 })
 
-Conference.prototype.connect = function (socket, envelope) {
-    new Response(this._interlocutor, socket, envelope).respond(abend)
+Conference.prototype._connect = function (socket, envelope) {
+    var operation = this._operations[keyify('socket')]
+    assert(operation != null)
+    operation(this, socket, envelope)
 }
 
 Conference.prototype._backlog = cadence(function (async, conference, promise) {
@@ -465,7 +463,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
         })(entries)
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
-        this._spigot.requests.push({
+        this._write.push({
             module: 'conference',
             method: 'naturalized',
             body: null
@@ -549,7 +547,7 @@ Conference.prototype._entry = cadence(function (async, entry) {
             async(function () {
                 this._operate(keyify(envelope.internal, 'receive', envelope.body.method), [ this, envelope.body.body ], async())
             }, function (response) {
-                this.spigot.requests.push({
+                this._write.push({
                     module: 'conference',
                     method: 'reduce',
                     key: envelope.key,
@@ -628,9 +626,19 @@ Conference.prototype.request = cadence(function (async, to, method, body) {
     }, async())
 })
 
-Conference.prototype.socket = cadence(function (async, to, header) {
+Conference.prototype.socket = function (to, header) {
+    if (arguments.length == 1) {
+        header = to
+        to = this.government.majority[0]
+    }
     var properties = this.getProperties(to)
-})
+    return this._client.connect({
+        module: 'conference',
+        method: 'socket',
+        to: properties,
+        body: header
+    })
+}
 
 Conference.prototype._replay = cadence(function (async, record) {
     this._operate(keyify(record.internal, 'catalog', record.method), [ this, record.body ], async())
@@ -654,7 +662,7 @@ Conference.prototype._broadcast = function (internal, method, message) {
     var cookie = this._nextCookie()
     var uniqueId = this.government.immigrated.promise[this.id]
     var key = method + '[' + uniqueId + '](' + cookie + ')'
-    this.spigot.requests.push({
+    this._write.push({
         module: 'conference',
         method: 'broadcast',
         internal: internal,

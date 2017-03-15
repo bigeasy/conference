@@ -115,8 +115,8 @@ Constructor.prototype.socket = function (name, method) {
     this._setOperation(keyify('socket'), coalesce('socket', method))
 }
 
-Constructor.prototype.catalog = function (name, method) {
-    this._setOperation(keyify(false, 'catalog', name), coalesce(name, method))
+Constructor.prototype.method = function (name, method) {
+    this._setOperation(keyify('method', name), coalesce(name, method))
 }
 
 function Dispatcher (conference) {
@@ -145,7 +145,6 @@ function Conference (object, constructor) {
     this.colleague = null
     this.replaying = false
     this.id = null
-    this._welcomes = {}
     this._cookie = '0'
     this._boundary = '0'
     this._broadcasts = {}
@@ -170,7 +169,8 @@ function Conference (object, constructor) {
     this._requester = new Requester('colleague', responder.read, responder.write)
 
     this._write = this._requester.write
-    this._requester.read.pump(this)
+    this._requester.read.pump([ this, '_entry' ])
+    this._requester.read.pump([ this, '_play' ])
 
     this._cliffhanger = new Cliffhanger
 
@@ -189,7 +189,21 @@ Conference.prototype._nextBoundary = function () {
     return this._boundary = Monotonic.increment(this._boundary, 0)
 }
 
-Conference.prototype.enqueue = cadence(function (async, envelope) {
+Conference.prototype._play = cadence(function (async, envelope) {
+    if (envelope == null) {
+        return
+    }
+    switch (envelope.method) {
+    case 'record':
+        this._records.enqueue(envelope, async())
+        break
+    case 'invoke':
+        this._invoke(envelope.body.method, envelope.body.body, async())
+        break
+    }
+})
+
+Conference.prototype._entries = cadence(function (async, envelope) {
     if (envelope == null) {
         return
     }
@@ -203,47 +217,6 @@ Conference.prototype.enqueue = cadence(function (async, envelope) {
         })
         this._entry(envelope.body, async())
         break
-    case 'replay':
-        throw new Error
-        this._replay(envelope.body, async())
-        break
-    case 'record':
-        if (envelope.body.internal) {
-            this._records.enqueue(envelope, async())
-        } else {
-            this._replay(envelope.body, async())
-        }
-        break
-    }
-})
-
-Conference.prototype._fromSpigot = cadence(function (async, envelope) {
-    assert(envelope == null || envelope.method == 'record')
-    if (envelope == null) {
-        return
-    }
-    // TODO Implicit here is that one form of record is only used during
-    // initialization, while another is only used after initialization. I do
-    // have two different implementations of the record function, and the
-    // direction to merge them is switch up based on how the function is called,
-    // so what we have here is a problem of a name collision. I want to describe
-    // this as recording, which it is, but there is more abstraction than that.
-    // There are concurrency issues. I've tried to imagine how you'd use the
-    // anonymous version of record after `join`, but I do not have good answers
-    // for that. For the applications I intend to write immediately.
-    //
-    // I'm resisting the direction I've taken numerous times. Over-engineering
-    // the ability to use `record` whenever, feeling bad about the complexity
-    // and performance costs, getting bitten by it down the road, eventually,
-    // longer after these decisions have been made, deciding, realizing that
-    // that no one is every going to use it that way, and then coming back and
-    // removing this.
-    //
-    assert(envelope.method == 'record')
-    if (envelope.body.internal) {
-        this._records.enqueue(envelope, async())
-    } else {
-        this._replay(envelope.body, async())
     }
 })
 
@@ -283,19 +256,18 @@ Conference.prototype._record_ = cadence(function (async, operation) {
                 this._records.dequeue(async())
             }, function (envelope) {
                 assert(envelope.id == envelope.id)
-                return envelope.body.body
+                return envelope.body
             })
         } else {
             async.apply(null, Array.prototype.slice.call(arguments))
         }
     }, function (result) {
         result = coalesce(result)
-        // TODO Rename the other one to `replay`, get rid of `internal`.
         this._write.push({
             module: 'conference',
             method: 'record',
             id: id,
-            body: { internal: true, body: result }
+            body: result
         })
         return [ result ]
     })
@@ -315,18 +287,18 @@ Conference.prototype.record_ = function () {
                         conference._replays.dequeue(async())
                     }, function (envelope) {
                         assert(envelope.id == envelope.id)
-                        return envelope.body.body
+                        return envelope.body
                     })
                 } else {
                     async.apply(null, steps)
                 }
             }, function (result) {
                 result = coalesce(result)
-                conference.write.push({
+                conference._write.push({
                     module: 'conference',
                     method: 'record',
                     id: id,
-                    body: { internal: true, body: result }
+                    body: result
                 })
                 return [ result ]
             })
@@ -343,31 +315,17 @@ Conference.prototype.boundary = function () {
     })
 }
 
-Conference.prototype._record = cadence(function (async, internal, method, message) {
+Conference.prototype._invoke = cadence(function (async, method, body) {
     this._write.push({
         module: 'conference',
-        method: 'record',
-        body: { internal: internal, method: method, body: coalesce(message) }
+        method: 'invoke',
+        body: { method: method, body: coalesce(body) }
     })
-    this._replay({ internal: internal, method: method, body: message }, async())
+    this._operate(keyify('method', method), [ this, body ], async())
 })
 
-Conference.prototype.record = function (method, message, callback) {
-    this._record(false, method, message, callback)
-}
-
-// TODO Why sometimes wait? I don't want to wait on naturalized. I'm assuming
-// that we're not going to publish much, and that we're not going to wait for
-// the queue to empty. We don't have back-pressure and if we did have
-// back-pressure, we would have deadlock. We should push, not enqueue.
-
-//
-Conference.prototype.naturalized = function () {
-    this._write.push({
-        module: 'conference',
-        method: 'naturalized',
-        body: null
-    })
+Conference.prototype.invoke = function (method, message, callback) {
+    this._invoke(false, method, message, callback)
 }
 
 // Get the properties for a particular id or promise.
@@ -418,6 +376,7 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
 
 Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
+        console.log('GETTING BROADCASTS')
         this.record_(async)(function () {
             this._requester.request('colleague', {
                 module: 'conference',
@@ -432,6 +391,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
             }, async())
         })
     }, function (broadcasts) {
+        console.log('GOT BROADCASTS!!!', broadcasts)
         var entries = []
         for (var key in broadcasts) {
             var broadcast = broadcasts[key]
@@ -471,16 +431,21 @@ Conference.prototype._getBacklog = cadence(function (async) {
     })
 })
 
-Conference.prototype.makeWelcome = function (welcome) {
-    assert(this.government.immigrated != null, 'can only be called during immigration')
-    this._welcomes[this.government.promise] = welcome
-}
-
 Conference.prototype._naturalized = cadence(function (async, conference, promise) {
     this._operate(keyify('naturalize'), [ this, promise ], async())
 })
 
-Conference.prototype._entry = cadence(function (async, entry) {
+Conference.prototype._entry = cadence(function (async, envelope) {
+    if (envelope == null || envelope.method != 'entry') {
+        return []
+    }
+    var entry = envelope.body
+    this._write.push({
+        module: 'conference',
+        method: 'boundary',
+        id: this._nextBoundary(),
+        entry: entry.promise
+    })
     if (entry.method == 'government') {
         this.government = entry.body
         this.isLeader = this.government.majority[0] == this.id
@@ -639,10 +604,6 @@ Conference.prototype.socket = function (to, header) {
         body: header
     })
 }
-
-Conference.prototype._replay = cadence(function (async, record) {
-    this._operate(keyify(record.internal, 'catalog', record.method), [ this, record.body ], async())
-})
 
 // Honoring back pressure here, but I've not considered if back pressure is
 // going to cause deadlock. I'm sure it can. What happens when the queues

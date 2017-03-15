@@ -419,10 +419,11 @@ Conference.prototype._getBacklog = cadence(function (async) {
             }
         }
         async.forEach(function (entry) {
-            this._entry(entry, async())
+            this._entry({ module: 'colleague', method: 'entry', body: entry }, async())
         })(entries)
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
+            console.log('trying to notify??')
         this._write.push({
             module: 'conference',
             method: 'naturalized',
@@ -462,12 +463,14 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 }, function () {
                     this._operate(keyify('immigrate'), [ this, immigrant.id ], async())
                 }, function () {
+                    console.log( "IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
                         this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())
                     }
                 }, function () {
+                    console.log('BACKLOGGED')
                     if (this.government.promise == '1/0' || immigrant.id == this.id) {
                         this._broadcast(true, 'naturalized', this.government.promise)
                     }

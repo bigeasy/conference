@@ -111,8 +111,8 @@ Constructor.prototype.request = function (name, method) {
     this._setOperation(keyify(false, 'request', name), coalesce(name, method))
 }
 
-Constructor.prototype.socket = function (name, method) {
-    this._setOperation(keyify('socket'), coalesce('socket', method))
+Constructor.prototype.socket = function (method) {
+    this._setOperation(keyify('socket'), coalesce(method, 'socket'))
 }
 
 Constructor.prototype.method = function (name, method) {

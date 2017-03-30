@@ -87,8 +87,8 @@ Constructor.prototype.immigrate = function (method) {
     this._setOperation(keyify('immigrate'), coalesce(method, 'immigrate'))
 }
 
-Constructor.prototype.naturalize = function (method) {
-    this._setOperation(keyify('naturalize'), coalesce(method, 'naturalize'))
+Constructor.prototype.naturalized = function (method) {
+    this._setOperation(keyify('naturalized'), coalesce(method, 'naturalized'))
 }
 
 Constructor.prototype.exile = function (method) {
@@ -433,7 +433,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
 })
 
 Conference.prototype._naturalized = cadence(function (async, conference, promise) {
-    this._operate(keyify('naturalize'), [ this, promise ], async())
+    this._operate(keyify('naturalized'), [ this, promise ], async())
 })
 
 Conference.prototype._entry = cadence(function (async, envelope) {

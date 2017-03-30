@@ -15,7 +15,7 @@ var Procession = require('procession')
 
 var Monotonic = require('monotonic').asString
 
-var coalesce = require('nascent.coalesce')
+var coalesce = require('extant')
 
 var logger = require('prolific.logger').createLogger('conference')
 

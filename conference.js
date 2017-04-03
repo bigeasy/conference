@@ -1,12 +1,9 @@
 // Common utilities.
 var assert = require('assert')
 var util = require('util')
-
-// TODO Bad.
-var abend = require('abend')
+var coalesce = require('extant')
 
 // Control-flow utilities.
-var abend = require('abend')
 var cadence = require('cadence')
 
 var Cliffhanger = require('cliffhanger')
@@ -14,8 +11,6 @@ var Cliffhanger = require('cliffhanger')
 var Procession = require('procession')
 
 var Monotonic = require('monotonic').asString
-
-var coalesce = require('extant')
 
 var logger = require('prolific.logger').createLogger('conference')
 

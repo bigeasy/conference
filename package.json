@@ -22,7 +22,6 @@
     },
     "dependencies":
     {
-                            "abend":                        "1.0.x",
                             "cadence":                      "1.0.x",
                             "cliffhanger":                  "1.4.x",
                             "conduit":                      "0.4.x",

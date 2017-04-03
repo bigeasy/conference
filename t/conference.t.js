@@ -44,8 +44,8 @@ function prove (async, assert) {
     }
     var Conference = require('..')
     assert(Conference, 'require')
-    return
     var conference = new Conference(reactor, function (constructor) {
+        constructor.bootstrap()
         constructor.join()
         constructor.immigrate(cadence(function (async, id) {
             if (conference.government.promise == '1/0') {
@@ -62,13 +62,16 @@ function prove (async, assert) {
                 })
             }
         }))
+        constructor.naturalized()
         constructor.exile()
         constructor.government()
+        constructor.socket()
         constructor.receive('message')
         constructor.reduced('message', 'messages')
         constructor.request('request')
-        constructor.catalog('catalog')
+        constructor.method('catalog')
     })
+    return
     var immigrate = {
         module: 'paxos',
         promise: '1/0',

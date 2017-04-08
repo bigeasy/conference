@@ -32,7 +32,8 @@
             </div>
 
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> assert = <span class="hljs-built_in">require</span>(<span class="hljs-string">'assert'</span>)
-<span class="hljs-keyword">var</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>)</pre></div></div>
+<span class="hljs-keyword">var</span> util = <span class="hljs-built_in">require</span>(<span class="hljs-string">'util'</span>)
+<span class="hljs-keyword">var</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">'extant'</span>)</pre></div></div>
 
         </li>
 
@@ -43,11 +44,21 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>TODO Bad.</p>
+              <p>Control-flow utilities.</p>
 
             </div>
 
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> abend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'abend'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>)
+
+<span class="hljs-keyword">var</span> Cliffhanger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cliffhanger'</span>)
+
+<span class="hljs-keyword">var</span> Procession = <span class="hljs-built_in">require</span>(<span class="hljs-string">'procession'</span>)
+
+<span class="hljs-keyword">var</span> Monotonic = <span class="hljs-built_in">require</span>(<span class="hljs-string">'monotonic'</span>).asString
+
+<span class="hljs-keyword">var</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'prolific.logger'</span>).createLogger(<span class="hljs-string">'conference'</span>)
+
+<span class="hljs-keyword">var</span> Operation = <span class="hljs-built_in">require</span>(<span class="hljs-string">'operation/redux'</span>)</pre></div></div>
 
         </li>
 
@@ -58,34 +69,6 @@
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>Control-flow utilities.</p>
-
-            </div>
-
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">var</span> abend = <span class="hljs-built_in">require</span>(<span class="hljs-string">'abend'</span>)
-<span class="hljs-keyword">var</span> cadence = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cadence'</span>)
-
-<span class="hljs-keyword">var</span> Cliffhanger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'cliffhanger'</span>)
-
-<span class="hljs-keyword">var</span> Procession = <span class="hljs-built_in">require</span>(<span class="hljs-string">'procession'</span>)
-
-<span class="hljs-keyword">var</span> Monotonic = <span class="hljs-built_in">require</span>(<span class="hljs-string">'monotonic'</span>).asString
-
-<span class="hljs-keyword">var</span> coalesce = <span class="hljs-built_in">require</span>(<span class="hljs-string">'nascent.coalesce'</span>)
-
-<span class="hljs-keyword">var</span> logger = <span class="hljs-built_in">require</span>(<span class="hljs-string">'prolific.logger'</span>).createLogger(<span class="hljs-string">'conference'</span>)
-
-<span class="hljs-keyword">var</span> Operation = <span class="hljs-built_in">require</span>(<span class="hljs-string">'operation/redux'</span>)</pre></div></div>
-
-        </li>
-
-
-        <li id="section-4">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
-              </div>
               <p>Invoke round trip requests into an evented message queue.</p>
 
             </div>
@@ -95,11 +78,11 @@
         </li>
 
 
-        <li id="section-5">
+        <li id="section-4">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <p>Respond to requests from an evented message queue.</p>
 
@@ -115,11 +98,11 @@
         </li>
 
 
-        <li id="section-6">
+        <li id="section-5">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+                <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
               <p>The patterns below take my back to my efforts to create immutable
 constructors when immutability was all the rage in Java-land. It would have
@@ -135,14 +118,28 @@ remember the ratoinale that led me to adopt it.</p>
         </li>
 
 
+        <li id="section-6">
+            <div class="annotation">
+
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>A <code>Responder</code> class specific to the Conference that will respond to
+directives from a Colleague.</p>
+
+            </div>
+
+        </li>
+
+
         <li id="section-7">
             <div class="annotation">
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
-              <p>A <code>Responder</code> class specific to the Conference that will respond to
-directives from a Colleague.</p>
+              <p>Update: Actually, passing in the builder function feels somewhat immutable,
+about as immutable as JavaScript is going to get.</p>
 
             </div>
 
@@ -154,20 +151,6 @@ directives from a Colleague.</p>
 
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-8">&#182;</a>
-              </div>
-              <p>Update: Actually, passing in the builder function feels somewhat immutable,
-about as immutable as JavaScript is going to get.</p>
-
-            </div>
-
-        </li>
-
-
-        <li id="section-9">
-            <div class="annotation">
-
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
 
             </div>
@@ -210,8 +193,8 @@ Constructor.prototype.immigrate = <span class="hljs-function"><span class="hljs-
     <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-string">'immigrate'</span>), coalesce(method, <span class="hljs-string">'immigrate'</span>))
 }
 
-Constructor.prototype.naturalize = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-string">'naturalize'</span>), coalesce(method, <span class="hljs-string">'naturalize'</span>))
+Constructor.prototype.naturalized = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">method</span>) </span>{
+    <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-string">'naturalized'</span>), coalesce(method, <span class="hljs-string">'naturalized'</span>))
 }
 
 Constructor.prototype.exile = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">method</span>) </span>{
@@ -234,8 +217,8 @@ Constructor.prototype.request = <span class="hljs-function"><span class="hljs-ke
     <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-literal">false</span>, <span class="hljs-string">'request'</span>, name), coalesce(name, method))
 }
 
-Constructor.prototype.socket = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
-    <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-string">'socket'</span>), coalesce(<span class="hljs-string">'socket'</span>, method))
+Constructor.prototype.socket = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">method</span>) </span>{
+    <span class="hljs-keyword">this</span>._setOperation(keyify(<span class="hljs-string">'socket'</span>), coalesce(method, <span class="hljs-string">'socket'</span>))
 }
 
 Constructor.prototype.method = <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">name, method</span>) </span>{
@@ -279,11 +262,11 @@ Dispatcher.prototype.fromSpigot = <span class="hljs-function"><span class="hljs-
         </li>
 
 
-        <li id="section-10">
+        <li id="section-9">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
               <p>Currently exposed for testing, but feeling that these method should be
 public for general testing, with one wrapper that hooks it up to the
@@ -294,11 +277,11 @@ colleague’s streams and another that lets you send mock events.</p>
         </li>
 
 
-        <li id="section-11">
+        <li id="section-10">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
 
             </div>
@@ -325,11 +308,11 @@ colleague’s streams and another that lets you send mock events.</p>
         </li>
 
 
-        <li id="section-12">
+        <li id="section-11">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <p>An ever increasing identify to adorn our broadcasts so that it’s key will be
 unique when we combine our immigration promise with the cookie.</p>
@@ -339,11 +322,11 @@ unique when we combine our immigration promise with the cookie.</p>
         </li>
 
 
-        <li id="section-13">
+        <li id="section-12">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
 
             </div>
@@ -390,11 +373,11 @@ Conference.prototype._entries = cadence(<span class="hljs-function"><span class=
         </li>
 
 
-        <li id="section-14">
+        <li id="section-13">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p>Run the given operation if we are not replaying a log. If we are not
 replaying then we are performing actions that generate out-of-band log
@@ -405,11 +388,11 @@ entries. If we are replaying we want to replay those out-of-band log entries.</p
         </li>
 
 
-        <li id="section-15">
+        <li id="section-14">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
 
             </div>
@@ -520,11 +503,11 @@ Conference.prototype.invoke = <span class="hljs-function"><span class="hljs-keyw
         </li>
 
 
-        <li id="section-16">
+        <li id="section-15">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <p>Get the properties for a particular id or promise.</p>
 
@@ -533,11 +516,11 @@ Conference.prototype.invoke = <span class="hljs-function"><span class="hljs-keyw
         </li>
 
 
-        <li id="section-17">
+        <li id="section-16">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
 
             </div>
@@ -550,11 +533,11 @@ Conference.prototype.invoke = <span class="hljs-function"><span class="hljs-keyw
         </li>
 
 
-        <li id="section-18">
+        <li id="section-17">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Respond an out of band request. If you want to return a status code you can
 just throw the integer value.</p>
@@ -566,11 +549,11 @@ HTTP status codes and throwing them as integer.</p>
         </li>
 
 
-        <li id="section-19">
+        <li id="section-18">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
 
             </div>
@@ -658,11 +641,11 @@ Conference.prototype._getBacklog = cadence(<span class="hljs-function"><span cla
         </li>
 
 
-        <li id="section-20">
+        <li id="section-19">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
               <p>TODO Probably not a bad idea, but what was I thinking?</p>
 
@@ -678,7 +661,7 @@ Conference.prototype._getBacklog = cadence(<span class="hljs-function"><span cla
 })
 
 Conference.prototype._naturalized = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, conference, promise</span>) </span>{
-    <span class="hljs-keyword">this</span>._operate(keyify(<span class="hljs-string">'naturalize'</span>), [ <span class="hljs-keyword">this</span>, promise ], <span class="hljs-keyword">async</span>())
+    <span class="hljs-keyword">this</span>._operate(keyify(<span class="hljs-string">'naturalized'</span>), [ <span class="hljs-keyword">this</span>, promise ], <span class="hljs-keyword">async</span>())
 })
 
 Conference.prototype._entry = cadence(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">async, envelope</span>) </span>{
@@ -745,11 +728,11 @@ Conference.prototype._entry = cadence(<span class="hljs-function"><span class="h
         </li>
 
 
-        <li id="section-21">
+        <li id="section-20">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>Reminder that if you ever want to do queued instead async then the
 queue should be external and a property of the object the conference
@@ -760,11 +743,11 @@ operates.</p>
         </li>
 
 
-        <li id="section-22">
+        <li id="section-21">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
 
             </div>
@@ -797,11 +780,11 @@ operates.</p>
         </li>
 
 
-        <li id="section-23">
+        <li id="section-22">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>Tally our responses and if they match the number of participants,
 then invoke the reduction method.</p>
@@ -849,11 +832,11 @@ Conference.prototype._checkReduced = cadence(<span class="hljs-function"><span c
         </li>
 
 
-        <li id="section-24">
+        <li id="section-23">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p>TODO Save welcomes, or introductions, and have them expire when the welcome
 expires, and maybe that is the entirety of out-of-band.</p>
@@ -865,11 +848,11 @@ a valid response from your request handler.</p>
         </li>
 
 
-        <li id="section-25">
+        <li id="section-24">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
 
             </div>
@@ -884,11 +867,11 @@ a valid response from your request handler.</p>
         </li>
 
 
-        <li id="section-26">
+        <li id="section-25">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>TODO More consideration as to what happens when the route <code>to</code> cannot
 be found, and whether it makes sense to try to contact anyone but the
@@ -926,11 +909,11 @@ Conference.prototype.socket = <span class="hljs-function"><span class="hljs-keyw
         </li>
 
 
-        <li id="section-27">
+        <li id="section-26">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <p>Honoring back pressure here, but I’ve not considered if back pressure is
 going to cause deadlock. I’m sure it can. What happens when the queues
@@ -941,11 +924,11 @@ between the parcipants fill?</p>
         </li>
 
 
-        <li id="section-28">
+        <li id="section-27">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <p>This bit of code here is disconcerting because it indicates an asynchronous
 call back into the system that is waiting for it to complete. At first, I
@@ -961,11 +944,11 @@ that error will crash this participant.</p>
         </li>
 
 
-        <li id="section-29">
+        <li id="section-28">
             <div class="annotation">
 
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
 
             </div>

@@ -1,6 +1,7 @@
 require('proof')(1, require('cadence')(prove))
 
 function prove (async, assert) {
+    var Simulator = require('../simulator')
     var cadence = require('cadence')
     var reactor = {
         join: cadence(function (async, conference) {
@@ -71,6 +72,8 @@ function prove (async, assert) {
         constructor.request('request')
         constructor.method('catalog')
     })
+    var simulator = new Simulator
+    simulator.bootstrap(conference)
     return
     var immigrate = {
         module: 'paxos',

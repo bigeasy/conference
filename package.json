@@ -34,6 +34,7 @@
     },
     "devDependencies":
     {
+                            "abend":                        "1.0.x",
                             "compassion.colleague":         "0.7.x",
                             "compassion.counterfeiter":     "0.0.x",
                             "kibitz":                       "0.7.x",

@@ -66,7 +66,7 @@ Constructor.prototype.setProperty = function (name, value) {
 
 Constructor.prototype.setProperties = function (properties) {
     for (var name in properties) {
-        this._properties[name] = properties[name]
+        this.setProperty(name, properties[name])
     }
 }
 
@@ -506,7 +506,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 request: envelope.body.body,
                 responses: {}
             }
-            prefix = envelope.internal ? '!' : ''
+            var prefix = envelope.internal ? '!' : ''
             async(function () {
                 this._operate(keyify(envelope.internal, 'receive', envelope.body.method), [ this, envelope.body.body ], async())
             }, function (response) {

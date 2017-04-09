@@ -1,12 +1,27 @@
-require('proof')(1, require('cadence')(prove))
+require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
+    var Counterfeiter = require('compassion.counterfeiter')
+
+    var Network = require('compassion.counterfeiter/network')
+    var Responder = require('conduit/responder')
+    var Colleague = require('compassion.colleague/colleague')
+    var Kibitzer = require('kibitz')
+    var abend = require('abend')
+
+    var network = new Network
+
+
     var cadence = require('cadence')
     var reactor = {
+        bootstrap: cadence(function (async) {
+        }),
         join: cadence(function (async, conference) {
             conference.ifNotReplaying(async)(function () {
                 conference.record('catalog', 1, async())
             })
+        }),
+        naturalized: cadence(function (async) {
         }),
         catalog: cadence(function (async, value) {
             assert(value, 1, 'cataloged')
@@ -45,9 +60,11 @@ function prove (async, assert) {
     var Conference = require('..')
     assert(Conference, 'require')
     var conference = new Conference(reactor, function (constructor) {
+        constructor.setProperties({ key: 'value' })
         constructor.bootstrap()
         constructor.join()
         constructor.immigrate(cadence(function (async, id) {
+            return
             if (conference.government.promise == '1/0') {
                 async(function () {
                     conference.outOfBand('1', 'request', 1, async())
@@ -71,6 +88,9 @@ function prove (async, assert) {
         constructor.request('request')
         constructor.method('catalog')
     })
+    var counterfieter = new Counterfeiter(network, conference)
+    counterfieter.bootstrap(abend)
+    counterfieter.destroy()
     return
     var immigrate = {
         module: 'paxos',

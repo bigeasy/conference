@@ -24,12 +24,12 @@
     {
                             "cadence":                      "1.0.x",
                             "cliffhanger":                  "1.4.x",
-                            "conduit":                      "0.4.x",
+                            "conduit":                      "0.6.x",
                             "extant":                       "1.0.x",
                             "monotonic":                    "3.0.x",
                             "nop":                          "1.0.0",
-                            "operation":                    "1.2.x",
-                            "procession":                   "0.2.x",
+                            "operation":                    "1.4.x",
+                            "procession":                   "0.4.x",
                             "prolific.logger":              "3.0.x",
                             "rescue":                       "3.0.x"
     },

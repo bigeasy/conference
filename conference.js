@@ -164,8 +164,8 @@ function Conference (object, constructor) {
     this._requester = new Requester('colleague', responder.read, responder.write)
 
     this._write = this._requester.write
-    this._requester.read.pump([ this, '_entry' ])
-    this._requester.read.pump([ this, '_play' ])
+    this._requester.read.pump(this, '_entry')
+    this._requester.read.pump(this, '_play')
 
     this._cliffhanger = new Cliffhanger
 

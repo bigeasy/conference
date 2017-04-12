@@ -2,15 +2,7 @@ require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
     var Counterfeiter = require('compassion.counterfeiter')
-
-    var Network = require('compassion.counterfeiter/network')
-    var Responder = require('conduit/responder')
-    var Colleague = require('compassion.colleague/colleague')
-    var Kibitzer = require('kibitz')
-    var abend = require('abend')
-
-    var network = new Network
-
+    var counterfeiter = new Counterfeiter
 
     var cadence = require('cadence')
     var reactor = {
@@ -88,9 +80,11 @@ function prove (async, assert) {
         constructor.request('request')
         constructor.method('catalog')
     })
-    var counterfieter = new Counterfeiter(network, conference)
-    counterfieter.bootstrap(abend)
-    counterfieter.destroy()
+    async(function () {
+        counterfeiter.bootstrap(conference, 'first', async())
+    }, function () {
+        counterfeiter.destroy()
+    })
     return
     var immigrate = {
         module: 'paxos',

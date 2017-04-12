@@ -27,6 +27,7 @@
                             "conduit":                      "0.4.x",
                             "extant":                       "1.0.x",
                             "monotonic":                    "3.0.x",
+                            "nop":                          "1.0.0",
                             "operation":                    "1.2.x",
                             "procession":                   "0.2.x",
                             "prolific.logger":              "3.0.x",

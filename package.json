@@ -38,7 +38,7 @@
                             "abend":                        "1.0.x",
                             "compassion.colleague":         "0.7.x",
                             "compassion.counterfeiter":     "0.0.x",
-                            "kibitz":                       "0.7.x",
+                            "kibitz":                       "0.8.x",
                             "proof":                        "3.0.x"
     },
     "main":                 "conference",

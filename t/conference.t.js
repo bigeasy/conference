@@ -1,6 +1,7 @@
 require('proof')(2, require('cadence')(prove))
 
 function prove (async, assert) {
+    var abend = require('abend')
     var Counterfeiter = require('compassion.counterfeiter')
     var counterfeiter = new Counterfeiter
 
@@ -80,9 +81,12 @@ function prove (async, assert) {
         constructor.request('request')
         constructor.method('catalog')
     })
-    async(function () {
+    counterfeiter.done.wait(abend)
+    async([function () {
         counterfeiter.bootstrap(conference, 'first', async())
-    }, function () {
+    }, function (error) {
+        console.log(error.stack)
+    }], function () {
         counterfeiter.destroy()
     })
     return

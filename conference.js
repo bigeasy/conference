@@ -14,7 +14,7 @@ var Monotonic = require('monotonic').asString
 
 var logger = require('prolific.logger').createLogger('conference')
 
-var Operation = require('operation/redux')
+var Operation = require('operation/variadic')
 
 // Invoke round trip requests into an evented message queue.
 var Requester = require('conduit/requester')
@@ -48,16 +48,13 @@ function Constructor (conference, properties, object, operations) {
     this._object = object
     this._operations = operations
     this._properties = properties
-    this._setOperation([ true, 'receive', 'naturalized' ], { object: conference, method: '_naturalized' })
-    this._setOperation([ true, 'request', 'backlog' ], { object: conference, method: '_backlog' })
+    this._setOperation([ true, 'receive', 'naturalized' ], [ conference, '_naturalized' ])
+    this._setOperation([ true, 'request', 'backlog' ], [ conference, '_backlog' ])
 }
 
-Constructor.prototype._setOperation = function (key, operation) {
-    if (typeof operation == 'string') {
-        assert(this._object, 'object cannot be null')
-        operation = { object: this._object, method: operation }
-    }
-    this._operations[Keyify.stringify(key)] = Operation(operation)
+Constructor.prototype._setOperation = function (key, vargs) {
+    if (vargs.length == 0) vargs.push(key[key.length - 1])
+    this._operations[Keyify.stringify(key)] = Operation(vargs, { object: this._object })
 }
 
 Constructor.prototype.setProperty = function (name, value) {
@@ -70,48 +67,48 @@ Constructor.prototype.setProperties = function (properties) {
     }
 }
 
-Constructor.prototype.bootstrap = function (method) {
-    this._setOperation([ 'bootstrap' ], coalesce(method, 'bootstrap'))
+Constructor.prototype.bootstrap = function () {
+    this._setOperation([ 'bootstrap' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.join = function (method) {
-    this._setOperation([ 'join' ], coalesce(method, 'join'))
+Constructor.prototype.join = function () {
+    this._setOperation([ 'join' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.immigrate = function (method) {
-    this._setOperation([ 'immigrate' ], coalesce(method, 'immigrate'))
+Constructor.prototype.immigrate = function () {
+    this._setOperation([ 'immigrate' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.naturalized = function (method) {
-    this._setOperation([ 'naturalized' ], coalesce(method, 'naturalized'))
+Constructor.prototype.naturalized = function () {
+    this._setOperation([ 'naturalized' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.exile = function (method) {
-    this._setOperation([ 'exile' ], coalesce(method, 'exile'))
+Constructor.prototype.exile = function () {
+    this._setOperation([ 'exile' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.government = function (method) {
-    this._setOperation([ 'government' ], coalesce(method, 'government'))
+Constructor.prototype.government = function () {
+    this._setOperation([ 'government' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.receive = function (name, method) {
-    this._setOperation([ false, 'receive', name ], coalesce(method, name))
+Constructor.prototype.receive = function (name) {
+    this._setOperation([ false, 'receive', name ], Array.prototype.slice.call(arguments, 1))
 }
 
-Constructor.prototype.reduced = function (name, method) {
-    this._setOperation([ false, 'reduced', name ], coalesce(method, name))
+Constructor.prototype.reduced = function (name) {
+    this._setOperation([ false, 'reduced', name ], Array.prototype.slice.call(arguments, 1))
 }
 
-Constructor.prototype.request = function (name, method) {
-    this._setOperation([ false, 'request', name ], coalesce(name, method))
+Constructor.prototype.request = function (name) {
+    this._setOperation([ false, 'request', name ], Array.prototype.slice.call(arguments, 1))
 }
 
-Constructor.prototype.socket = function (method) {
-    this._setOperation([ 'socket' ], coalesce(method, 'socket'))
+Constructor.prototype.socket = function () {
+    this._setOperation([ 'socket' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.method = function (name, method) {
-    this._setOperation([ 'method', name ], coalesce(name, method))
+Constructor.prototype.method = function (name) {
+    this._setOperation([ 'method', name ], Array.prototype.slice.call(arguments, 1))
 }
 
 function Dispatcher (conference) {

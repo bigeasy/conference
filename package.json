@@ -28,6 +28,7 @@
                             "extant":                       "1.0.x",
                             "monotonic":                    "3.0.x",
                             "nop":                          "1.0.0",
+                            "keyify":                       "0.0.1",
                             "operation":                    "1.4.x",
                             "procession":                   "0.4.x",
                             "prolific.logger":              "3.0.x",

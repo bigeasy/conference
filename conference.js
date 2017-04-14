@@ -25,7 +25,7 @@ var Responder = require('conduit/responder')
 var Client = require('conduit/client')
 var Server = require('conduit/server')
 
-function keyify () { return JSON.stringify(Array.prototype.slice.call(arguments)) }
+var Keyify = require('keyify')
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
@@ -48,8 +48,8 @@ function Constructor (conference, properties, object, operations) {
     this._object = object
     this._operations = operations
     this._properties = properties
-    this._setOperation(keyify(true, 'receive', 'naturalized'), { object: conference, method: '_naturalized' })
-    this._setOperation(keyify(true, 'request', 'backlog'), { object: conference, method: '_backlog' })
+    this._setOperation([ true, 'receive', 'naturalized' ], { object: conference, method: '_naturalized' })
+    this._setOperation([ true, 'request', 'backlog' ], { object: conference, method: '_backlog' })
 }
 
 Constructor.prototype._setOperation = function (key, operation) {
@@ -57,7 +57,7 @@ Constructor.prototype._setOperation = function (key, operation) {
         assert(this._object, 'object cannot be null')
         operation = { object: this._object, method: operation }
     }
-    this._operations[key] = Operation(operation)
+    this._operations[Keyify.stringify(key)] = Operation(operation)
 }
 
 Constructor.prototype.setProperty = function (name, value) {
@@ -71,47 +71,47 @@ Constructor.prototype.setProperties = function (properties) {
 }
 
 Constructor.prototype.bootstrap = function (method) {
-    this._setOperation(keyify('bootstrap'), coalesce(method, 'bootstrap'))
+    this._setOperation([ 'bootstrap' ], coalesce(method, 'bootstrap'))
 }
 
 Constructor.prototype.join = function (method) {
-    this._setOperation(keyify('join'), coalesce(method, 'join'))
+    this._setOperation([ 'join' ], coalesce(method, 'join'))
 }
 
 Constructor.prototype.immigrate = function (method) {
-    this._setOperation(keyify('immigrate'), coalesce(method, 'immigrate'))
+    this._setOperation([ 'immigrate' ], coalesce(method, 'immigrate'))
 }
 
 Constructor.prototype.naturalized = function (method) {
-    this._setOperation(keyify('naturalized'), coalesce(method, 'naturalized'))
+    this._setOperation([ 'naturalized' ], coalesce(method, 'naturalized'))
 }
 
 Constructor.prototype.exile = function (method) {
-    this._setOperation(keyify('exile'), coalesce(method, 'exile'))
+    this._setOperation([ 'exile' ], coalesce(method, 'exile'))
 }
 
 Constructor.prototype.government = function (method) {
-    this._setOperation(keyify('government'), coalesce(method, 'government'))
+    this._setOperation([ 'government' ], coalesce(method, 'government'))
 }
 
 Constructor.prototype.receive = function (name, method) {
-    this._setOperation(keyify(false, 'receive', name), coalesce(method, name))
+    this._setOperation([ false, 'receive', name ], coalesce(method, name))
 }
 
 Constructor.prototype.reduced = function (name, method) {
-    this._setOperation(keyify(false, 'reduced', name), coalesce(method, name))
+    this._setOperation([ false, 'reduced', name ], coalesce(method, name))
 }
 
 Constructor.prototype.request = function (name, method) {
-    this._setOperation(keyify(false, 'request', name), coalesce(name, method))
+    this._setOperation([ false, 'request', name ], coalesce(name, method))
 }
 
 Constructor.prototype.socket = function (method) {
-    this._setOperation(keyify('socket'), coalesce(method, 'socket'))
+    this._setOperation([ 'socket' ], coalesce(method, 'socket'))
 }
 
 Constructor.prototype.method = function (name, method) {
-    this._setOperation(keyify('method', name), coalesce(name, method))
+    this._setOperation([ 'method', name ], coalesce(name, method))
 }
 
 function Dispatcher (conference) {
@@ -316,7 +316,7 @@ Conference.prototype._invoke = cadence(function (async, method, body) {
         method: 'invoke',
         body: { method: method, body: coalesce(body) }
     })
-    this._operate(keyify('method', method), [ this, body ], async())
+    this._operate([ 'method', method ], [ this, body ], async())
 })
 
 Conference.prototype.invoke = function (method, message, callback) {
@@ -346,13 +346,13 @@ Conference.prototype._request = cadence(function (async, envelope) {
         return [ this._properties ]
     case 'outOfBand':
         envelope = envelope.body
-        this._operate(keyify(envelope.internal, 'request', envelope.method), [ this, envelope.body ], async())
+        this._operate([ envelope.internal, 'request', envelope.method ], [ this, envelope.body ], async())
         break
     }
 })
 
 Conference.prototype._connect = function (socket, envelope) {
-    var operation = this._operations[keyify('socket')]
+    var operation = this._operations[Keyify.stringify([ 'socket' ])]
     assert(operation != null)
     operation(this, socket, envelope)
 }
@@ -362,7 +362,7 @@ Conference.prototype._backlog = cadence(function (async, conference, promise) {
 })
 
 Conference.prototype._operate = cadence(function (async, key, vargs) {
-    var operation = this._operations[key]
+    var operation = this._operations[Keyify.stringify(key)]
     if (operation == null) {
         return null
     }
@@ -428,7 +428,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
 })
 
 Conference.prototype._naturalized = cadence(function (async, conference, promise) {
-    this._operate(keyify('naturalized'), [ this, promise ], async())
+    this._operate([ 'naturalized' ], [ this, promise ], async())
 })
 
 Conference.prototype._entry = cadence(function (async, envelope) {
@@ -451,12 +451,12 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 var immigrant = this.government.immigrate
                 async(function () {
                     if (this.government.promise == '1/0') {
-                        this._operate(keyify('bootstrap'), [ this ], async())
+                        this._operate([ 'bootstrap' ], [ this ], async())
                     } else if (immigrant.id == this.id) {
-                        this._operate(keyify('join'), [ this ], async())
+                        this._operate([ 'join' ], [ this ], async())
                     }
                 }, function () {
-                    this._operate(keyify('immigrate'), [ this, immigrant.id ], async())
+                    this._operate([ 'immigrate' ], [ this, immigrant.id ], async())
                 }, function () {
                     console.log( "IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
@@ -473,7 +473,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
             } else if (this.government.exile) {
                 var exile = this.government.exile
                 async(function () {
-                    this._operate(keyify('exile'), [ this ], async())
+                    this._operate([ 'exile' ], [ this ], async())
                 }, function () {
                     var promise = this.government.exile.promise
                     var broadcasts = []
@@ -488,7 +488,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 })
             }
         }, function () {
-            this._operate(keyify('government'), [ this ], async())
+            this._operate([ 'government' ], [ this ], async())
         })
     } else if (entry.body.body) {
         // Reminder that if you ever want to do queued instead async then the
@@ -508,7 +508,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
             }
             var prefix = envelope.internal ? '!' : ''
             async(function () {
-                this._operate(keyify(envelope.internal, 'receive', envelope.body.method), [ this, envelope.body.body ], async())
+                this._operate([ envelope.internal, 'receive', envelope.body.method ], [ this, envelope.body.body ], async())
             }, function (response) {
                 this._write.push({
                     module: 'conference',
@@ -555,7 +555,7 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
                 value: broadcast.responses[promise]
             })
         }
-        this._operate(keyify(broadcast.internal, 'reduced', broadcast.method), [ reduced, broadcast.request ], async())
+        this._operate([ broadcast.internal, 'reduced', broadcast.method ], [ reduced, broadcast.request ], async())
         delete this._broadcasts[broadcast.key]
     }
 })

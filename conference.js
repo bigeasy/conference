@@ -123,14 +123,6 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
     })
 })
 
-Dispatcher.prototype.fromBasin = function (envelope, callback) {
-    this._conference._fromBasin(envelope, callback)
-}
-
-Dispatcher.prototype.fromSpigot = function (envelope, callback) {
-    this._conference._fromSpigot(envelope, callback)
-}
-
 function Conference (object, constructor) {
     logger.info('constructed', {})
     this.isLeader = false

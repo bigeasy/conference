@@ -82,11 +82,9 @@ function prove (async, assert) {
         constructor.method('catalog')
     })
     counterfeiter.done.wait(abend)
-    async([function () {
+    async(function () {
         counterfeiter.bootstrap(conference, 'first', async())
-    }, function (error) {
-        console.log(error.stack)
-    }], function () {
+    }, function () {
         counterfeiter.destroy()
     })
     return

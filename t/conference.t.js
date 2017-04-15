@@ -52,35 +52,38 @@ function prove (async, assert) {
     }
     var Conference = require('..')
     assert(Conference, 'require')
-    var conference = new Conference(reactor, function (constructor) {
-        constructor.setProperties({ key: 'value' })
-        constructor.bootstrap()
-        constructor.join()
-        constructor.immigrate(cadence(function (async, id) {
-            return
-            if (conference.government.promise == '1/0') {
-                async(function () {
-                    conference.outOfBand('1', 'request', 1, async())
-                }, function (response) {
-                    assert(response, 2, 'out of band')
-                    conference.naturalized()
-                    var properties = conference.getProperties(id)
-                    assert(id, '1', 'immigrate id')
-                    assert(conference.getProperties(id), {}, 'immigrate properties')
-                    assert(conference.getProperties('1/0'), {}, 'immigrate promise properties')
-                    assert(conference.getProperties('2'), null, 'properites not found')
-                })
-            }
-        }))
-        constructor.naturalized()
-        constructor.exile()
-        constructor.government()
-        constructor.socket()
-        constructor.receive('message')
-        constructor.reduced('message', 'messages')
-        constructor.request('request')
-        constructor.method('catalog')
-    })
+    function createConference () {
+        return new Conference(reactor, function (constructor) {
+            constructor.setProperties({ key: 'value' })
+            constructor.bootstrap()
+            constructor.join()
+            constructor.immigrate(cadence(function (async, id) {
+                return
+                if (conference.government.promise == '1/0') {
+                    async(function () {
+                        conference.outOfBand('1', 'request', 1, async())
+                    }, function (response) {
+                        assert(response, 2, 'out of band')
+                        conference.naturalized()
+                        var properties = conference.getProperties(id)
+                        assert(id, '1', 'immigrate id')
+                        assert(conference.getProperties(id), {}, 'immigrate properties')
+                        assert(conference.getProperties('1/0'), {}, 'immigrate promise properties')
+                        assert(conference.getProperties('2'), null, 'properites not found')
+                    })
+                }
+            }))
+            constructor.naturalized()
+            constructor.exile()
+            constructor.government()
+            constructor.socket()
+            constructor.receive('message')
+            constructor.reduced('message', 'messages')
+            constructor.request('request')
+            constructor.method('catalog')
+        })
+    }
+    var conference = createConference()
     counterfeiter.done.wait(abend)
     async(function () {
         counterfeiter.bootstrap(conference, 'first', async())

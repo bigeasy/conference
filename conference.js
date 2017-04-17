@@ -532,7 +532,6 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 request: envelope.body.body,
                 responses: {}
             }
-            var prefix = envelope.internal ? '!' : ''
             async(function () {
                 this._operate([ envelope.internal, 'receive', envelope.body.method ], [ this, envelope.body.body ], async())
             }, function (response) {

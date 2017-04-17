@@ -27,6 +27,8 @@ var Server = require('conduit/server')
 
 var Keyify = require('keyify')
 
+var Cubbyhole = require('cubbyhole')
+
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
 // pained me to create an object that continues to initialize the object after
@@ -132,7 +134,6 @@ function Conference (object, constructor) {
     this._cookie = '0'
     this._boundary = '0'
     this._broadcasts = {}
-    this._backlogs = {}
 
     this._records = new Procession
     this._replays = this._records.shifter()
@@ -157,6 +158,7 @@ function Conference (object, constructor) {
     this._requester.read.pump(this, '_play')
 
     this._cliffhanger = new Cliffhanger
+    this._backlogs = new Cubbyhole
 
     constructor(new Constructor(this, this._properties = {}, object, this._operations = {}))
 }
@@ -308,8 +310,8 @@ Conference.prototype._invoke = cadence(function (async, method, body) {
     this._operate([ 'method', method ], [ this, body ], async())
 })
 
-Conference.prototype.invoke = function (method, message, callback) {
-    this._invoke(false, method, message, callback)
+Conference.prototype.invoke = function (method, body, callback) {
+    this._invoke(method, body, callback)
 }
 
 // Get the properties for a particular id or promise.
@@ -340,14 +342,40 @@ Conference.prototype._request = cadence(function (async, envelope) {
     }
 })
 
+// TODO Abend only being used in this one place.
+var abend = require('abend')
 Conference.prototype._connect = function (socket, envelope) {
-    var operation = this._operations[Keyify.stringify([ 'socket' ])]
-    assert(operation != null)
-    operation(this, socket, envelope)
+    console.log(envelope)
+    switch (envelope.method) {
+    case 'backlog':
+        this._backlog(socket, envelope.body, abend)
+        break
+    case 'user':
+        var operation = this._operations[Keyify.stringify([ 'socket' ])]
+        assert(operation != null)
+        operation(this, socket, envelope.body.header)
+        break
+    }
 }
 
-Conference.prototype._backlog = cadence(function (async, conference, promise) {
-    return [ this._backlogs[promise] ]
+Conference.prototype._backlog = cadence(function (async, socket, header) {
+    var shifter = socket.read.shifter()
+    async(function () {
+        console.log('-------------------- erep')
+        shifter.dequeue(async())
+    }, function (envelope) {
+        assert(envelope == null, 'there should be no message body')
+        this._backlogs.wait(header.promise, async())
+    }, function (broadcasts) {
+        for (var key in broadcasts) {
+            socket.write.push({
+                module: 'conference',
+                method: 'backlog',
+                body: broadcasts[key]
+            }) // TODO Back-pressure?
+        }
+        socket.write.push(null)
+    })
 })
 
 Conference.prototype._operate = cadence(function (async, key, vargs) {
@@ -358,53 +386,60 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
     operation.apply(null, vargs.concat(async()))
 })
 
-Conference.prototype._getBacklog = cadence(function (async) {
+Conference.prototype._getBacklog = cadence(function (async, promise) {
     async(function () {
-        console.log('GETTING BROADCASTS')
-        this.record_(async)(function () {
-            this._requester.request('colleague', {
-                module: 'conference',
-                method: 'outOfBand',
-                to: this.government.majority[0],
-                body: {
+        var entries = []
+        async(function () {
+            var shifter = null
+            if (!this.replaying) {
+                var to = this.government.majority[0]
+                var socket = this._socket(to, {
                     module: 'conference',
                     method: 'backlog',
-                    internal: true,
-                    body: this.government.promise
-                }
-            }, async())
-        })
-    }, function (broadcasts) {
-        console.log('GOT BROADCASTS!!!', broadcasts)
-        var entries = []
-        for (var key in broadcasts) {
-            var broadcast = broadcasts[key]
-            entries.push({
-                body: {
-                    module: 'conference',
-                    method: 'broadcast',
-                    key: key,
-                    body: {
-                        method: broadcast.method,
-                        body: broadcast.request
+                    body: { promise: this.government.promise }
+
+                })
+                socket.write.push(null)
+                shifter = socket.read.shifter()
+            }
+            var loop = async(function () {
+                async(function () {
+                    this.record_(async)(function () { shifter.dequeue(async()) })
+                }, function (envelope) {
+                    console.log('xxxx', envelope)
+                    if (envelope == null) {
+                        return [ loop.break ]
                     }
-                }
-            })
-            for (var promise in broadcast.responses) {
-                entries.push({
-                    body: {
-                        module: 'conference',
-                        method: 'reduce',
-                        from: promise,
-                        key: key,
-                        body: broadcast.responses[promise]
+                    var broadcast = envelope.body
+                    entries.push({
+                        body: {
+                            module: 'conference',
+                            method: 'broadcast',
+                            key: key,
+                            body: {
+                                method: broadcast.method,
+                                body: broadcast.request
+                            }
+                        }
+                    })
+                    for (var promise in broadcast.responses) {
+                        entries.push({
+                            body: {
+                                module: 'conference',
+                                method: 'reduce',
+                                from: promise,
+                                key: key,
+                                body: broadcast.responses[promise]
+                            }
+                        })
                     }
                 })
-            }
-        }
-        async.forEach(function (entry) {
-            this._entry({ module: 'colleague', method: 'entry', body: entry }, async())
-        })(entries)
+            })()
+        }, function () {
+            async.forEach(function (entry) {
+                this._entry({ module: 'colleague', method: 'entry', body: entry }, async())
+            })(entries)
+        })
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
             console.log('trying to notify??')
@@ -449,7 +484,8 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 }, function () {
                     console.log( "IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
-                        this._backlogs[this.government.promise] = JSON.parse(JSON.stringify(this._broadcasts))
+                        var broadcasts = JSON.parse(JSON.stringify(this._broadcasts))
+                        this._backlogs.set(this.government.promise, null, broadcasts)
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())
                     }
@@ -578,16 +614,23 @@ Conference.prototype.request = cadence(function (async, to, method, body) {
     }, async())
 })
 
+Conference.prototype._socket = function (to, body) {
+    return this._client.connect({
+        module: 'conference',
+        method: 'socket',
+        to: this.getProperties(to),
+        body: body
+    })
+}
+
 Conference.prototype.socket = function (to, header) {
     if (arguments.length == 1) {
         header = to
         to = this.government.majority[0]
     }
-    var properties = this.getProperties(to)
-    return this._client.connect({
+    return this._socket(to, {
         module: 'conference',
-        method: 'socket',
-        to: properties,
+        method: 'user',
         body: header
     })
 }

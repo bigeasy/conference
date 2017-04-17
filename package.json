@@ -25,6 +25,7 @@
                             "cadence":                      "1.0.x",
                             "cliffhanger":                  "1.4.x",
                             "conduit":                      "0.7.x",
+                            "cubbyhole":                    "0.0.x",
                             "extant":                       "1.0.x",
                             "monotonic":                    "3.0.x",
                             "nop":                          "1.0.0",

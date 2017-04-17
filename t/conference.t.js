@@ -91,19 +91,24 @@ function prove (async, assert) {
     }, function () {
         counterfeiter.events['first'].dequeue(async())
     }, function () {
-        var conference = createConference()
         counterfeiter.join({
-            conference: conference,
+            conference: createConference(),
             id: 'second',
+            leader: 'first',
+            republic: counterfeiter.kibitzers['first'].paxos.republic
+        }, async())
+        counterfeiter.join({
+            conference: createConference(),
+            id: 'third',
             leader: 'first',
             republic: counterfeiter.kibitzers['first'].paxos.republic
         }, async())
     }, function () {
         counterfeiter.events['second'].join(function (envelope) {
-            return envelope.promise == '2/3'
+            return envelope.promise == '4/0'
         }, async())
-    }, function (entry) {
-        console.log('ENTRY', entry)
+    }, function () {
+        console.log(true, 'consensus')
         counterfeiter.destroy()
     })
 }

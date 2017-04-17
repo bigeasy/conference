@@ -345,7 +345,6 @@ Conference.prototype._request = cadence(function (async, envelope) {
 // TODO Abend only being used in this one place.
 var abend = require('abend')
 Conference.prototype._connect = function (socket, envelope) {
-    console.log(envelope)
     switch (envelope.method) {
     case 'backlog':
         this._backlog(socket, envelope.body, abend)
@@ -361,7 +360,6 @@ Conference.prototype._connect = function (socket, envelope) {
 Conference.prototype._backlog = cadence(function (async, socket, header) {
     var shifter = socket.read.shifter()
     async(function () {
-        console.log('-------------------- erep')
         shifter.dequeue(async())
     }, function (envelope) {
         assert(envelope == null, 'there should be no message body')
@@ -535,7 +533,6 @@ Conference.prototype._entry = cadence(function (async, envelope) {
             async(function () {
                 this._operate([ envelope.internal, 'receive', envelope.body.method ], [ this, envelope.body.body ], async())
             }, function (response) {
-                console.log("RESPONSE", response)
                 this._write.push({
                     module: 'conference',
                     method: 'reduce',

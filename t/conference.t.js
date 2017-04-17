@@ -8,12 +8,14 @@ function prove (async, assert) {
     var cadence = require('cadence')
     var reactor = {
         bootstrap: cadence(function (async) {
+            return null
         }),
         join: cadence(function (async, conference) {
             conference.ifNotReplaying(async)(function () {
             })
         }),
         naturalized: cadence(function (async) {
+            return null
         }),
         catalog: cadence(function (async, value) {
             assert(value, 1, 'cataloged')
@@ -97,10 +99,9 @@ function prove (async, assert) {
             republic: counterfeiter.kibitzers['first'].paxos.republic
         }, async())
     }, function () {
-        counterfeiter.events['second'].dequeue(async())
-    }, function (entry) {
-        console.log('ENTRY', entry)
-        counterfeiter.events['second'].dequeue(async())
+        counterfeiter.events['second'].join(function (envelope) {
+            return envelope.promise == '2/3'
+        }, async())
     }, function (entry) {
         console.log('ENTRY', entry)
         counterfeiter.destroy()

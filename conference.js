@@ -50,7 +50,7 @@ function Constructor (conference, properties, object, operations) {
     this._object = object
     this._operations = operations
     this._properties = properties
-    this._setOperation([ true, 'receive', 'naturalized' ], [ conference, '_naturalized' ])
+    this._setOperation([ true, 'reduced', 'naturalized' ], [ conference, '_naturalized' ])
     this._setOperation([ true, 'request', 'backlog' ], [ conference, '_backlog' ])
 }
 
@@ -452,6 +452,7 @@ Conference.prototype._getBacklog = cadence(function (async, promise) {
 })
 
 Conference.prototype._naturalized = cadence(function (async, conference, promise) {
+    this._backlogs.remove(promise)
     this._operate([ 'naturalized' ], [ this, promise ], async())
 })
 
@@ -535,13 +536,14 @@ Conference.prototype._entry = cadence(function (async, envelope) {
             async(function () {
                 this._operate([ envelope.internal, 'receive', envelope.body.method ], [ this, envelope.body.body ], async())
             }, function (response) {
+                console.log("RESPONSE", response)
                 this._write.push({
                     module: 'conference',
                     method: 'reduce',
                     key: envelope.key,
                     internal: envelope.internal,
                     from: this.government.immigrated.promise[this.id],
-                    body: response
+                    body: coalesce(response)
                 })
             })
             break
@@ -549,15 +551,8 @@ Conference.prototype._entry = cadence(function (async, envelope) {
         // then invoke the reduction method.
         case 'reduce':
             var broadcast = this._broadcasts[envelope.key]
-
             broadcast.responses[envelope.from] = envelope.body
-
-
             this._checkReduced(broadcast, async())
-
-            break
-        case 'naturalized':
-            delete this._backlogs[envelope.from]
             break
         }
     }

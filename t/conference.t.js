@@ -104,8 +104,8 @@ function prove (async, assert) {
             republic: counterfeiter.kibitzers['first'].paxos.republic
         }, async())
     }, function () {
-        counterfeiter.events['second'].join(function (envelope) {
-            return envelope.promise == '4/0'
+        counterfeiter.events['third'].join(function (envelope) {
+            return envelope.promise == '4/5'
         }, async())
     }, function () {
         console.log(true, 'consensus')

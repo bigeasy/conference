@@ -104,10 +104,24 @@ function prove (async, assert) {
             republic: counterfeiter.kibitzers['first'].paxos.republic
         }, async())
     }, function () {
-        counterfeiter.events['third'].join(function (envelope) {
-            return envelope.promise == '4/5'
+        counterfeiter.events['first'].join(function (envelope) {
+            return envelope.promise == '4/1'
         }, async())
     }, function () {
+        counterfeiter.join({
+            conference: createConference(),
+            id: 'fourth',
+            leader: 'first',
+            republic: counterfeiter.kibitzers['first'].paxos.republic
+        }, async())
+    }, function () {
+        // TODO Is the timer stopping???
+        counterfeiter.events['fourth'].join(function (envelope) {
+//            console.log('env', envelope)
+            return envelope.promise == '5/9'
+        }, async())
+    }, function (entry) {
+        console.log('=== 5/a ---', entry)
         console.log(true, 'consensus')
         counterfeiter.destroy()
     })

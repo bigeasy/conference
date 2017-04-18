@@ -386,61 +386,71 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
 
 Conference.prototype._getBacklog = cadence(function (async, promise) {
     async(function () {
-        var entries = []
-        async(function () {
-            var shifter = null
-            if (!this.replaying) {
-                var to = this.government.majority[0]
-                var socket = this._socket(to, {
-                    module: 'conference',
-                    method: 'backlog',
-                    body: { promise: this.government.promise }
+        var shifter = null
+        if (!this.replaying) {
+            var to = this.government.majority[0]
+            var socket = this._socket(to, {
+                module: 'conference',
+                method: 'backlog',
+                body: { promise: this.government.promise }
 
-                })
-                socket.write.push(null)
-                shifter = socket.read.shifter()
-            }
-            var loop = async(function () {
+            })
+            socket.write.push(null)
+            shifter = socket.read.shifter()
+        }
+        var loop = async(function () {
+            async(function () {
+                this.record_(async)(function () { shifter.dequeue(async()) })
+            }, function (envelope) {
+                if (envelope == null) {
+                    return [ loop.break ]
+                }
+                var broadcast = envelope.body
                 async(function () {
-                    this.record_(async)(function () { shifter.dequeue(async()) })
-                }, function (envelope) {
-                    console.log('xxxx', envelope)
-                    if (envelope == null) {
-                        return [ loop.break ]
-                    }
-                    var broadcast = envelope.body
-                    entries.push({
+                    this._entry({
+                        module: 'colleague',
+                        method: 'entry',
                         body: {
-                            module: 'conference',
-                            method: 'broadcast',
-                            key: key,
+                            // paxos
                             body: {
-                                method: broadcast.method,
-                                body: broadcast.request
+                                // islander
+                                body: {
+                                    method: 'broadcast',
+                                    module: 'conference',
+                                    key: broadcast.key,
+                                    body: {
+                                        method: broadcast.method,
+                                        body: broadcast.request
+                                    }
+                                }
                             }
                         }
-                    })
-                    for (var promise in broadcast.responses) {
-                        entries.push({
+                    }, async())
+                }, function () {
+                    async.forEach(function (promise) {
+                        this._entry({
+                            module: 'colleague',
+                            method: 'entry',
                             body: {
-                                module: 'conference',
-                                method: 'reduce',
-                                from: promise,
-                                key: key,
-                                body: broadcast.responses[promise]
+                                // paxos
+                                body: {
+                                    // islander
+                                    body: {
+                                        module: 'conference',
+                                        method: 'reduce',
+                                        from: promise,
+                                        key: broadcast.key,
+                                        body: broadcast.responses[promise]
+                                    }
+                                }
                             }
-                        })
-                    }
+                        }, async())
+                    })(Object.keys(broadcast.responses))
                 })
-            })()
-        }, function () {
-            async.forEach(function (entry) {
-                this._entry({ module: 'colleague', method: 'entry', body: entry }, async())
-            })(entries)
-        })
+            })
+        })()
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
-            console.log('trying to notify??')
         this._write.push({
             module: 'conference',
             method: 'naturalized',
@@ -531,7 +541,11 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 responses: {}
             }
             async(function () {
-                this._operate([ envelope.internal, 'receive', envelope.body.method ], [ this, envelope.body.body ], async())
+                this._operate([
+                    envelope.internal, 'receive', envelope.body.method
+                ], [
+                    this, envelope.body.body
+                ], async())
             }, function (response) {
                 this._write.push({
                     module: 'conference',

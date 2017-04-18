@@ -1,9 +1,11 @@
-require('proof')(2, require('cadence')(prove))
+require('proof')(5, require('cadence')(prove))
 
 function prove (async, assert) {
     var abend = require('abend')
     var Counterfeiter = require('compassion.counterfeiter')
     var counterfeiter = new Counterfeiter
+
+    var reduced = null
 
     var cadence = require('cadence')
     var reactor = {
@@ -23,7 +25,7 @@ function prove (async, assert) {
         request: cadence(function (async, value) {
             return value + 1
         }),
-        message: cadence(function (async, value) {
+        message: cadence(function (async, conference, value) {
             return value - 1
         }),
         government: cadence(function (async, conference) {
@@ -31,24 +33,27 @@ function prove (async, assert) {
                 assert(true, 'got a government')
             }
         }),
-        messages: cadence(function (async, responses, request) {
-            assert(request, 1, 'reduced request')
-            assert(responses, [{
-                id: '1', value: 7
-            }, {
-                id: '2', value: 5
-            }], 'reduced responses')
+        messages: cadence(function (async, conference, reduction) {
+            if (conference.id == 'third') {
+                assert(reduction.request, 1, 'reduced request')
+                assert(reduction.arrayed, [{
+                    id: 'second', value: 0
+                }, {
+                    id: 'first', value: 0
+                }, {
+                    id: 'third', value: 0
+                }], 'reduced responses')
+                reduced()
+            }
         }),
-        exile: cadence(function (async, id, promise, properties) {
-            assert({
-                id: id,
-                promise: promise,
-                properties: properties
-            }, {
-                id: '2',
-                promise: '2/0',
-                properties: {}
-            }, 'exile')
+        exile: cadence(function (async, conference) {
+            if (conference.id == 'third') {
+                assert(conference.government.exile, {
+                    id: 'fourth',
+                    promise: '5/0',
+                    properties: { key: 'value', url: 'fourth' }
+                }, 'exile')
+            }
         })
     }
     var Conference = require('..')
@@ -85,8 +90,8 @@ function prove (async, assert) {
         })
     }
     counterfeiter.done.wait(abend)
+    var conference = createConference()
     async(function () {
-        var conference = createConference()
         counterfeiter.bootstrap({ conference: conference, id: 'first' }, async())
     }, function () {
         counterfeiter.events['first'].dequeue(async())
@@ -115,14 +120,17 @@ function prove (async, assert) {
             republic: counterfeiter.kibitzers['first'].paxos.republic
         }, async())
     }, function () {
-        // TODO Is the timer stopping???
         counterfeiter.events['fourth'].join(function (envelope) {
-//            console.log('env', envelope)
+            return envelope.promise == '5/9'
+        }, async())
+        counterfeiter.events['third'].join(function (envelope) {
             return envelope.promise == '5/9'
         }, async())
     }, function (entry) {
-        console.log('=== 5/a ---', entry)
-        console.log(true, 'consensus')
+        reduced = async()
+        conference.broadcast('message', 1)
+        counterfeiter.leave('fourth')
+    }, function () {
         counterfeiter.destroy()
     })
 }

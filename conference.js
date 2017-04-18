@@ -506,6 +506,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 })
             } else if (this.government.exile) {
                 var exile = this.government.exile
+                console.log('consumed', this.id, entry)
                 async(function () {
                     this._operate([ 'exile' ], [ this ], async())
                 }, function () {
@@ -515,7 +516,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                         delete this._broadcasts[key].responses[promise]
                         broadcasts.push(this._broadcasts[key])
                     }
-                    delete this._backlogs[promise]
+                    this._backlogs.remove(promise)
                     async.forEach(function (broadcast) {
                         this._checkReduced(broadcast, async())
                     })(broadcasts)
@@ -585,7 +586,15 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
                 value: broadcast.responses[promise]
             })
         }
-        this._operate([ broadcast.internal, 'reduced', broadcast.method ], [ reduced, broadcast.request ], async())
+        this._operate([
+            broadcast.internal, 'reduced', broadcast.method
+        ], [
+            this, {
+                request: broadcast.request,
+                arrayed: reduced,
+                mapped: broadcast.responses
+            }
+        ], async())
         delete this._broadcasts[broadcast.key]
     }
 })

@@ -512,7 +512,8 @@ Conference.prototype._entry = cadence(function (async, envelope) {
         }, function () {
             this._operate([ 'government' ], [ this ], async())
         })
-    } else if (entry.body.body) {
+    } else {
+        assert(entry.body.body)
         // Reminder that if you ever want to do queued instead async then the
         // queue should be external and a property of the object the conference
         // operates.

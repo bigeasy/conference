@@ -270,6 +270,7 @@ Conference.prototype.record_ = function () {
             var steps = Array.prototype.slice.call(arguments)
             async(function () {
                 if (conference.replaying) {
+                    console.log(this.id, 'replaying')
                     async(function () {
                         conference._replays.dequeue(async())
                     }, function (envelope) {
@@ -277,6 +278,7 @@ Conference.prototype.record_ = function () {
                         return envelope.body
                     })
                 } else {
+                    console.log(this.id, 'recording')
                     async.apply(null, steps)
                 }
             }, function (result) {
@@ -388,6 +390,7 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
 Conference.prototype._getBacklog = cadence(function (async, promise) {
     async(function () {
         var shifter = null
+        console.log('_getBacklog', this.id)
         if (!this.replaying) {
             var to = this.government.majority[0]
             var socket = this._socket(to, {
@@ -466,6 +469,7 @@ Conference.prototype._naturalized = cadence(function (async, conference, promise
 })
 
 Conference.prototype._entry = cadence(function (async, envelope) {
+    console.log('entry', envelope)
     if (envelope == null || envelope.method != 'entry') {
         return []
     }

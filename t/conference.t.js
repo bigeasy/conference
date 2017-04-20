@@ -148,7 +148,6 @@ function prove (async, assert) {
         kibitzer.paxos.outbox.pump(new Recorder('paxos', l, merger.play), 'push')
         kibitzer.islander.outbox.pump(new Recorder('islander', l, merger.play), 'push')
         channel.pump(conference.write, conference.read)
-        var copy = logger.shifter()
         async(function () {
             merger.ready.wait(async())
         }, function () {

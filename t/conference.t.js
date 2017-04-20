@@ -5,7 +5,7 @@ function prove (async, assert) {
     var Counterfeiter = require('compassion.counterfeiter')
     var counterfeiter = new Counterfeiter
 
-    var reduced = null
+    var reduced = null, logger = null
 
     var cadence = require('cadence')
     var reactor = {
@@ -131,6 +131,29 @@ function prove (async, assert) {
         conference.broadcast('message', 1)
         counterfeiter.leave('fourth')
     }, function () {
+        logger = counterfeiter.loggers['fourth']
+        counterfeiter.done.wait(async())
         counterfeiter.destroy()
+    }, function () {
+        var conference = createConference()
+        var Channel = require('compassion.channel/channel')
+        var Merger = require('compassion.channel/merger')
+        var Kibitzer = require('kibitz')
+        var kibitzer = new Kibitzer({ id: 'fourth', ping: 250, timeout: 1000 })
+        var channel = new Channel(kibitzer)
+        var merger = new Merger(kibitzer, channel)
+        var Recorder = require('compassion.channel/recorder')
+        var l = require('prolific.logger').createLogger('x')
+        kibitzer.played.pump(new Recorder('kibitz', l, merger.play), 'push')
+        kibitzer.paxos.outbox.pump(new Recorder('paxos', l, merger.play), 'push')
+        kibitzer.islander.outbox.pump(new Recorder('islander', l, merger.play), 'push')
+        channel.pump(conference.write, conference.read)
+        var copy = logger.shifter()
+        async(function () {
+            merger.ready.wait(async())
+        }, function () {
+            logger.pump(merger.replay, 'enqueue')
+        })
+        merger.merge(async())
     })
 }

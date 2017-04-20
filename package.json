@@ -39,6 +39,7 @@
     {
                             "abend":                        "1.0.x",
                             "compassion.colleague":         "0.7.x",
+                            "compassion.channel":         "0.4.x",
                             "compassion.counterfeiter":     "0.0.x",
                             "kibitz":                       "0.8.x",
                             "proof":                        "3.0.x"

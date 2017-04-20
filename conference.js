@@ -237,6 +237,7 @@ Conference.prototype.ifNotReplaying = function () {
 Conference.prototype._record_ = cadence(function (async, operation) {
     async(function () {
         var id = this._boundary = Monotonic.increment(this._boundary, 0)
+        console.log(this.id, 'recording')
         if (conference.replaying) {
             async(function () {
                 this._records.dequeue(async())
@@ -506,7 +507,6 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 })
             } else if (this.government.exile) {
                 var exile = this.government.exile
-                console.log('consumed', this.id, entry)
                 async(function () {
                     this._operate([ 'exile' ], [ this ], async())
                 }, function () {
@@ -536,7 +536,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
         case 'broadcast':
             this._broadcasts[envelope.key] = {
                 key: envelope.key,
-                internal: envelope.internal,
+                internal: coalesce(envelope.internal, false),
                 method: envelope.body.method,
                 request: envelope.body.body,
                 responses: {}
@@ -552,7 +552,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                     module: 'conference',
                     method: 'reduce',
                     key: envelope.key,
-                    internal: envelope.internal,
+                    internal: coalesce(envelope.internal, false),
                     from: this.government.immigrated.promise[this.id],
                     body: coalesce(response)
                 })
@@ -670,7 +670,7 @@ Conference.prototype._broadcast = function (internal, method, message) {
     this._write.push({
         module: 'conference',
         method: 'broadcast',
-        internal: internal,
+        internal: coalesce(internal, false),
         key: key,
         body: {
             module: 'conference',

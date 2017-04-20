@@ -222,7 +222,7 @@ function record (conference, async) {
 }
 
 Conference.prototype._record = cadence(function (async, method) {
-    record(this, async)(function () { method.call(async()) })
+    record(this, async)(function () { method.call(null, async()) })
 })
 
 Conference.prototype.record = function () {
@@ -287,7 +287,7 @@ Conference.prototype._connect = function (socket, envelope) {
     case 'user':
         var operation = this._operations[Keyify.stringify([ 'socket' ])]
         assert(operation != null)
-        operation(this, socket, envelope.body.header)
+        operation(this, socket, envelope.body, abend)
         break
     }
 }
@@ -546,10 +546,9 @@ Conference.prototype._socket = function (to, body) {
 }
 
 Conference.prototype.socket = function (to, header) {
-    if (arguments.length == 1) {
-        header = to
-        to = this.government.majority[0]
-    }
+    var vargs = Array.prototype.slice.call(arguments)
+    var header = coalesce(vargs.pop(), {})
+    var to = coalesce(vargs.pop(), this.government.majority[0])
     return this._socket(to, {
         module: 'conference',
         method: 'user',

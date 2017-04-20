@@ -1,4 +1,4 @@
-require('proof')(5, require('cadence')(prove))
+require('proof')(7, require('cadence')(prove))
 
 function prove (async, assert) {
     var abend = require('abend')
@@ -9,10 +9,42 @@ function prove (async, assert) {
 
     var cadence = require('cadence')
     var reactor = {
+        socket: cadence(function (async, conference, socket, header) {
+            var shifter = socket.read.shifter()
+            async(function () {
+                shifter.dequeue(async())
+            }, function (read) {
+                if (header.from == 'fourth') {
+                    assert(read, null, 'socket read')
+                }
+                socket.write.push(1)
+                socket.write.push(null)
+            })
+        }),
         bootstrap: cadence(function (async) {
             return null
         }),
         join: cadence(function (async, conference) {
+            if (conference.id != 'fourth') {
+                return []
+            }
+            var shifter = null
+            if (!conference.replaying) {
+                var socket = conference.socket({ from: conference.id })
+                shifter = socket.read.shifter()
+                socket.write.push(null)
+            }
+            async(function () {
+                conference.record(function (callback) {
+                    shifter.dequeue(callback)
+                    console.log('---- wiating ----')
+                }, async())
+            }, function (envelope) {
+                console.log('wiating', envelope)
+                if (conference.replaying) {
+                    assert(envelope, 1, 'socket')
+                }
+            })
         }),
         naturalized: cadence(function (async) {
             return null

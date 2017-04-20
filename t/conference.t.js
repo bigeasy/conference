@@ -35,12 +35,9 @@ function prove (async, assert) {
                 socket.write.push(null)
             }
             async(function () {
-                conference.record(function (callback) {
-                    shifter.dequeue(callback)
-                    console.log('---- wiating ----')
-                }, async())
+                conference.record(function (callback) { shifter.dequeue(callback) }, async())
             }, function (envelope) {
-                console.log('wiating', envelope)
+                conference.boundary()
                 if (conference.replaying) {
                     assert(envelope, 1, 'socket')
                 }

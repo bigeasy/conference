@@ -191,34 +191,6 @@ Conference.prototype._play = cadence(function (async, envelope) {
     }
 })
 
-// Run the given operation if we are not replaying a log. If we are not
-// replaying then we are performing actions that generate out-of-band log
-// entries. If we are replaying we want to replay those out-of-band log entries.
-
-//
-Conference.prototype._ifNotReplaying = cadence(function (async, operation) {
-    if (this.replaying) {
-        throw new Error(1)
-    }
-    if (!this.replaying) {
-        Operation(operation)(async())
-    }
-})
-
-Conference.prototype.ifNotReplaying = function () {
-    this.boundary()
-    if (arguments.length == 2) {
-        this._ifNotReplaying(arguments[0], arguments[1])
-    } else {
-        var async = arguments[0], conference = this
-        return function () {
-            if (!conference.replaying) {
-                async.apply(null, Array.prototype.slice.call(arguments))
-            }
-        }
-    }
-}
-
 Conference.prototype._record_ = cadence(function (async, operation) {
     async(function () {
         var id = this._boundary = Monotonic.increment(this._boundary, 0)

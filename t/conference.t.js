@@ -13,8 +13,6 @@ function prove (async, assert) {
             return null
         }),
         join: cadence(function (async, conference) {
-            conference.ifNotReplaying(async)(function () {
-            })
         }),
         naturalized: cadence(function (async) {
             return null

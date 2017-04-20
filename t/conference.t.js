@@ -22,9 +22,6 @@ function prove (async, assert) {
         catalog: cadence(function (async, value) {
             assert(value, 1, 'cataloged')
         }),
-        request: cadence(function (async, value) {
-            return value + 1
-        }),
         message: cadence(function (async, conference, value) {
             return value - 1
         }),
@@ -85,7 +82,6 @@ function prove (async, assert) {
             constructor.socket()
             constructor.receive('message')
             constructor.reduced('message', 'messages')
-            constructor.request('request')
             constructor.method('catalog')
         })
     }

@@ -101,9 +101,11 @@ Constructor.prototype.reduced = function (name) {
     this._setOperation([ false, 'reduced', name ], Array.prototype.slice.call(arguments, 1))
 }
 
+/*
 Constructor.prototype.request = function (name) {
     this._setOperation([ false, 'request', name ], Array.prototype.slice.call(arguments, 1))
 }
+*/
 
 Constructor.prototype.socket = function () {
     this._setOperation([ 'socket' ], Array.prototype.slice.call(arguments))
@@ -316,16 +318,10 @@ Conference.prototype.getProperties = function (id) {
 
 //
 Conference.prototype._request = cadence(function (async, envelope) {
-    switch (envelope.method) {
-    case 'properties':
-        this.id = envelope.body.id
-        this.replaying = envelope.body.replaying
-        return [ this._properties ]
-    case 'outOfBand':
-        envelope = envelope.body
-        this._operate([ envelope.internal, 'request', envelope.method ], [ this, envelope.body ], async())
-        break
-    }
+    assert(envelope.method == 'properties')
+    this.id = envelope.body.id
+    this.replaying = envelope.body.replaying
+    return [ this._properties ]
 })
 
 // TODO Abend only being used in this one place.
@@ -585,35 +581,6 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
         ], async())
         delete this._broadcasts[broadcast.key]
     }
-})
-
-// TODO Save welcomes, or introductions, and have them expire when the welcome
-// expires, and maybe that is the entirety of out-of-band.
-//
-// Any difficulties and this method will return `null`. Do not return `null` as
-// a valid response from your request handler.
-
-//
-Conference.prototype.request = cadence(function (async, to, method, body) {
-    if (arguments.length == 3) {
-       body = method
-       method = to
-       to = this.government.majority[0]
-    }
-    // TODO More consideration as to what happens when the route `to` cannot
-    // be found, and whether it makes sense to try to contact anyone but the
-    // leader for initialization.
-    this._requester.request('colleague', {
-        module: 'conference',
-        method: 'outOfBand',
-        to: to,
-        body: {
-            module: 'conference',
-            method: method,
-            internal: false,
-            body: body
-        }
-    }, async())
 })
 
 Conference.prototype._socket = function (to, body) {

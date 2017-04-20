@@ -189,23 +189,6 @@ Conference.prototype._play = cadence(function (async, envelope) {
     }
 })
 
-Conference.prototype._entries = cadence(function (async, envelope) {
-    if (envelope == null) {
-        return
-    }
-    switch (envelope.method) {
-    case 'entry':
-        this._write.push({
-            module: 'conference',
-            method: 'boundary',
-            id: this._nextBoundary(),
-            entry: envelope.body.promise
-        })
-        this._entry(envelope.body, async())
-        break
-    }
-})
-
 // Run the given operation if we are not replaying a log. If we are not
 // replaying then we are performing actions that generate out-of-band log
 // entries. If we are replaying we want to replay those out-of-band log entries.

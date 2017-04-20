@@ -191,64 +191,45 @@ Conference.prototype._play = cadence(function (async, envelope) {
     }
 })
 
-Conference.prototype._record_ = cadence(function (async, operation) {
-    async(function () {
-        var id = this._boundary = Monotonic.increment(this._boundary, 0)
-        console.log(this.id, 'recording')
-        if (conference.replaying) {
-            async(function () {
-                this._records.dequeue(async())
-            }, function (envelope) {
-                assert(envelope.id == envelope.id)
-                return envelope.body
+function record (conference, async) {
+    return function () {
+        var id = conference._nextBoundary()
+        var steps = Array.prototype.slice.call(arguments)
+        async(function () {
+            if (conference.replaying) {
+                console.log(this.id, 'replaying')
+                async(function () {
+                    conference._replays.dequeue(async())
+                }, function (envelope) {
+                    assert(envelope.id == envelope.id)
+                    return envelope.body
+                })
+            } else {
+                console.log(this.id, 'recording')
+                async.apply(null, steps)
+            }
+        }, function (result) {
+            result = coalesce(result)
+            conference._write.push({
+                module: 'conference',
+                method: 'record',
+                id: id,
+                body: result
             })
-        } else {
-            async.apply(null, Array.prototype.slice.call(arguments))
-        }
-    }, function (result) {
-        result = coalesce(result)
-        this._write.push({
-            module: 'conference',
-            method: 'record',
-            id: id,
-            body: result
+            return [ result ]
         })
-        return [ result ]
-    })
+    }
+}
+
+Conference.prototype._record = cadence(function (async, method) {
+    record(this, async)(function () { method.call(async()) })
 })
 
-Conference.prototype.record_ = function () {
+Conference.prototype.record = function () {
     if (arguments.length == 2) {
-        this._record_(arguments[0], arguments[1])
+        this._record(arguments[0], arguments[1])
     } else {
-        var async = arguments[0], conference = this
-        return function () {
-            var id = conference._nextBoundary()
-            var steps = Array.prototype.slice.call(arguments)
-            async(function () {
-                if (conference.replaying) {
-                    console.log(this.id, 'replaying')
-                    async(function () {
-                        conference._replays.dequeue(async())
-                    }, function (envelope) {
-                        assert(envelope.id == envelope.id)
-                        return envelope.body
-                    })
-                } else {
-                    console.log(this.id, 'recording')
-                    async.apply(null, steps)
-                }
-            }, function (result) {
-                result = coalesce(result)
-                conference._write.push({
-                    module: 'conference',
-                    method: 'record',
-                    id: id,
-                    body: result
-                })
-                return [ result ]
-            })
-        }
+        return record(this, arguments[0])
     }
 }
 
@@ -355,7 +336,7 @@ Conference.prototype._getBacklog = cadence(function (async, promise) {
         }
         var loop = async(function () {
             async(function () {
-                this.record_(async)(function () { shifter.dequeue(async()) })
+                this.record(async)(function () { shifter.dequeue(async()) })
             }, function (envelope) {
                 if (envelope == null) {
                     return [ loop.break ]

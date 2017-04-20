@@ -1,4 +1,4 @@
-require('proof')(7, require('cadence')(prove))
+require('proof')(8, require('cadence')(prove))
 
 function prove (async, assert) {
     var abend = require('abend')
@@ -49,8 +49,11 @@ function prove (async, assert) {
         naturalized: cadence(function (async) {
             return null
         }),
-        catalog: cadence(function (async, value) {
-            assert(value, 1, 'cataloged')
+        catalog: cadence(function (async, conference, value) {
+            if (conference.replaying) {
+                assert(value, 1, 'cataloged')
+            }
+            return []
         }),
         message: cadence(function (async, conference, value) {
             return value - 1
@@ -116,6 +119,7 @@ function prove (async, assert) {
         })
     }
     counterfeiter.done.wait(abend)
+    var fourth
     var conference = createConference()
     async(function () {
         counterfeiter.bootstrap({ conference: conference, id: 'first' }, async())
@@ -140,7 +144,7 @@ function prove (async, assert) {
         }, async())
     }, function () {
         counterfeiter.join({
-            conference: createConference(),
+            conference: fourth = createConference(),
             id: 'fourth',
             leader: 'first',
             republic: counterfeiter.kibitzers['first'].paxos.republic
@@ -152,7 +156,9 @@ function prove (async, assert) {
         counterfeiter.events['third'].join(function (envelope) {
             return envelope.promise == '5/9'
         }, async())
-    }, function (entry) {
+    }, function () {
+        fourth.invoke('catalog', 1, async())
+    }, function () {
         reduced = async()
         conference.broadcast('message', 1)
         counterfeiter.leave('fourth')
@@ -174,6 +180,10 @@ function prove (async, assert) {
         kibitzer.paxos.outbox.pump(new Recorder('paxos', l, merger.play), 'push')
         kibitzer.islander.outbox.pump(new Recorder('islander', l, merger.play), 'push')
         channel.pump(conference.write, conference.read)
+        var copy = logger.shifter()
+        copy.pump(function (envelope) {
+            console.log('>>>>', envelope)
+        })
         async(function () {
             merger.ready.wait(async())
         }, function () {

@@ -401,7 +401,6 @@ Conference.prototype._naturalized = cadence(function (async, conference, promise
 })
 
 Conference.prototype._entry = cadence(function (async, envelope) {
-    console.log('entry', envelope)
     if (envelope == null || envelope.method != 'entry') {
         return []
     }

@@ -24,6 +24,7 @@ var Responder = require('conduit/responder')
 
 var Client = require('conduit/client')
 var Server = require('conduit/server')
+var Multiplexer = require('conduit/multiplexer')
 
 var Keyify = require('keyify')
 
@@ -147,17 +148,20 @@ function Conference (object, constructor) {
     //
     this._dispatcher = new Dispatcher(this)
 
-    this.read = new Procession
-    this.write = new Procession
+    this._multiplexer = new Multiplexer
 
-    this._client = new Client('outgoing', this.write, this.read)
-    var server = new Server({ object: this, method: '_connect' }, 'incoming', this._client.read, this._client.write)
-    var responder = new Responder(this._dispatcher, 'colleague', server.read, server.write)
-    this._requester = new Requester('colleague', responder.read, responder.write)
+    this.read = this._multiplexer.read
+    this.write = this._multiplexer.write
 
-    this._write = this._requester.write
-    this._requester.read.pump(this, '_entry')
-    this._requester.read.pump(this, '_play')
+    this._multiplexer.route('outgoing', this._client = new Client)
+    this._multiplexer.route('incoming', new Server(this, '_connect'))
+
+    this._multiplexer.route('conference', new Responder(this._dispatcher))
+    this._multiplexer.route('colleague', this._requester = new Requester)
+
+    // TODO Producer and consumer or similar?
+    this.write.shifter().pump(this, '_entry')
+    this.write.shifter().pump(this, '_play')
 
     this._cliffhanger = new Cliffhanger
     this._backlogs = new Cubbyhole
@@ -210,7 +214,7 @@ function record (conference, async) {
             }
         }, function (result) {
             result = coalesce(result)
-            conference._write.push({
+            conference.read.push({
                 module: 'conference',
                 method: 'record',
                 id: id,
@@ -234,7 +238,7 @@ Conference.prototype.record = function () {
 }
 
 Conference.prototype.boundary = function () {
-    this._write.push({
+    this.read.push({
         module: 'conference',
         method: 'boundary',
         id: this._boundary = Monotonic.increment(this._boundary, 0),
@@ -243,7 +247,7 @@ Conference.prototype.boundary = function () {
 }
 
 Conference.prototype._invoke = cadence(function (async, method, body) {
-    this._write.push({
+    this.read.push({
         module: 'conference',
         method: 'invoke',
         body: { method: method, body: coalesce(body) }
@@ -279,20 +283,22 @@ Conference.prototype._request = cadence(function (async, envelope) {
 
 // TODO Abend only being used in this one place.
 var abend = require('abend')
-Conference.prototype._connect = function (socket, envelope) {
+Conference.prototype._connect = function (envelope) {
     switch (envelope.method) {
     case 'backlog':
-        this._backlog(socket, envelope.body, abend)
-        break
+        var socket = { read: new Procession, write: new Procession }
+        this._backlog(envelope.body, socket, abend)
+        return { read: socket.write, write: socket.read }
     case 'user':
+        var socket = { read: new Procession, write: new Procession }
         var operation = this._operations[Keyify.stringify([ 'socket' ])]
         assert(operation != null)
         operation(this, socket, envelope.body, abend)
-        break
+        return { read: socket.write, write: socket.read }
     }
 }
 
-Conference.prototype._backlog = cadence(function (async, socket, header) {
+Conference.prototype._backlog = cadence(function (async, header, socket) {
     var shifter = socket.read.shifter()
     async(function () {
         shifter.dequeue(async())
@@ -325,14 +331,15 @@ Conference.prototype._getBacklog = cadence(function (async, promise) {
         console.log('_getBacklog', this.id)
         if (!this.replaying) {
             var to = this.government.majority[0]
-            var socket = this._socket(to, {
+            var receiver = { read: new Procession, write: new Procession }
+            this._socket(to, {
                 module: 'conference',
                 method: 'backlog',
                 body: { promise: this.government.promise }
 
-            })
-            socket.write.push(null)
-            shifter = socket.read.shifter()
+            }, receiver)
+            receiver.read.push(null)
+            shifter = receiver.write.shifter()
         }
         var loop = async(function () {
             async(function () {
@@ -387,7 +394,7 @@ Conference.prototype._getBacklog = cadence(function (async, promise) {
         })()
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
-        this._write.push({
+        this.read.push({
             module: 'conference',
             method: 'naturalized',
             body: null
@@ -405,7 +412,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
         return []
     }
     var entry = envelope.body
-    this._write.push({
+    this.read.push({
         module: 'conference',
         method: 'boundary',
         id: this._nextBoundary(),
@@ -484,7 +491,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                     this, envelope.body.body
                 ], async())
             }, function (response) {
-                this._write.push({
+                this.read.push({
                     module: 'conference',
                     method: 'reduce',
                     key: envelope.key,
@@ -535,24 +542,23 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
     }
 })
 
-Conference.prototype._socket = function (to, body) {
+Conference.prototype._socket = function (to, body, receiver) {
+    assert(receiver, receiver.read)
+    console.log(receiver)
     return this._client.connect({
         module: 'conference',
         method: 'socket',
         to: this.getProperties(to),
         body: body
-    })
+    }, receiver)
 }
 
-Conference.prototype.socket = function (to, header) {
-    var vargs = Array.prototype.slice.call(arguments)
-    var header = coalesce(vargs.pop(), {})
-    var to = coalesce(vargs.pop(), this.government.majority[0])
-    return this._socket(to, {
+Conference.prototype.socket = function (to, header, receiver) {
+    this._socket(to, {
         module: 'conference',
         method: 'user',
         body: header
-    })
+    }, receiver)
 }
 
 // Honoring back pressure here, but I've not considered if back pressure is
@@ -573,7 +579,7 @@ Conference.prototype._broadcast = function (internal, method, message) {
     var cookie = this._nextCookie()
     var uniqueId = this.government.immigrated.promise[this.id]
     var key = method + '[' + uniqueId + '](' + cookie + ')'
-    this._write.push({
+    this.read.push({
         module: 'conference',
         method: 'broadcast',
         internal: coalesce(internal, false),

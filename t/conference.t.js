@@ -1,6 +1,10 @@
-require('proof')(8, require('cadence')(prove))
+require('proof')(1, require('cadence')(prove))
 
 function prove (async, assert) {
+    var Conference = require('..')
+    assert(Conference, 'require')
+    return
+
     var abend = require('abend')
     var Counterfeiter = require('compassion.counterfeiter')
     var counterfeiter = new Counterfeiter
@@ -83,7 +87,6 @@ function prove (async, assert) {
             }
         })
     }
-    var Conference = require('..')
     assert(Conference, 'require')
     function createConference () {
         return new Conference(reactor, function (constructor) {

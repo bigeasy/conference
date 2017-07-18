@@ -2,6 +2,7 @@
 var assert = require('assert')
 var util = require('util')
 var coalesce = require('extant')
+var url = require('url')
 
 // Control-flow utilities.
 var cadence = require('cadence')
@@ -28,7 +29,11 @@ var Multiplexer = require('conduit/multiplexer')
 
 var Keyify = require('keyify')
 
+var Vizsla = require('vizsla')
+
 var Cubbyhole = require('cubbyhole')
+
+var Staccato = require('staccato')
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
@@ -68,6 +73,10 @@ Constructor.prototype.setProperties = function (properties) {
     for (var name in properties) {
         this.setProperty(name, properties[name])
     }
+}
+
+Constructor.prototype.responder = function () {
+    this._setOperation([ 'responder' ], Array.prototype.slice.call(arguments))
 }
 
 Constructor.prototype.bootstrap = function () {
@@ -129,6 +138,7 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
 })
 
 function Conference (object, constructor) {
+    this._ua = new Vizsla
     logger.info('constructed', {})
     this.isLeader = false
     this.colleague = null
@@ -275,47 +285,63 @@ Conference.prototype.getProperties = function (id) {
 
 //
 Conference.prototype._request = cadence(function (async, envelope) {
-    assert(envelope.method == 'properties')
-    this.id = envelope.body.id
-    this.replaying = envelope.body.replaying
-    return [ this._properties ]
+    switch (envelope.method) {
+    case 'backlog':
+        console.log(envelope)
+        this._backlogs.wait(envelope.body.promise, async())
+        break
+    case 'properties':
+        this.id = envelope.body.id
+        this.replaying = envelope.body.replaying
+        return [ this._properties ]
+    }
+})
+
+Conference.prototype._fetch = cadence(function (async, to, header, queue) {
+    async(function () {
+        this._ua.fetch({
+            url: this.government.properties[to].url
+        }, {
+            url: './request',
+            post: header,
+            raise: true
+        }, async())
+    }, function (stream) {
+        var readable = new Staccato.Readable(stream)
+        var loop = async(function () {
+            readable.read(async())
+        }, function (json) {
+            queue.push(json)
+            if (json == null) {
+                return [ loop.break ]
+            }
+        })
+    })
+})
+
+// TODO Make `responder` accept an Operation and then have this renamed to `request`.
+Conference.prototype.request = function (to, header) {
+    var queue = new Procession
+    this._fetch(to, header, queue, abend)
+    return queue
+}
+
+Conference.prototype._sendResponse = cadence(function (async, header, queue) {
+    var operation = this._operations[Keyify.stringify([ 'responder' ])]
+    async(function () {
+        setImmediate(async())
+    }, function () {
+        operation(this, header, queue)
+    })
 })
 
 // TODO Abend only being used in this one place.
 var abend = require('abend')
 Conference.prototype._connect = function (envelope) {
-    switch (envelope.method) {
-    case 'backlog':
-        var socket = { read: new Procession, write: new Procession }
-        this._backlog(envelope.body, socket, abend)
-        return { read: socket.write, write: socket.read }
-    case 'user':
-        var socket = { read: new Procession, write: new Procession }
-        var operation = this._operations[Keyify.stringify([ 'socket' ])]
-        assert(operation != null)
-        operation(this, socket, envelope.body, abend)
-        return { read: socket.write, write: socket.read }
-    }
+    var socket = { read: new Procession, write: new Procession }
+    this._sendResponse(envelope, socket.read, abend)
+    return socket
 }
-
-Conference.prototype._backlog = cadence(function (async, header, socket) {
-    var shifter = socket.read.shifter()
-    async(function () {
-        shifter.dequeue(async())
-    }, function (envelope) {
-        assert(envelope == null, 'there should be no message body')
-        this._backlogs.wait(header.promise, async())
-    }, function (broadcasts) {
-        for (var key in broadcasts) {
-            socket.write.push({
-                module: 'conference',
-                method: 'backlog',
-                body: broadcasts[key]
-            }) // TODO Back-pressure?
-        }
-        socket.write.push(null)
-    })
-})
 
 Conference.prototype._operate = cadence(function (async, key, vargs) {
     var operation = this._operations[Keyify.stringify(key)]
@@ -325,31 +351,47 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
     operation.apply(null, vargs.concat(async()))
 })
 
-Conference.prototype._getBacklog = cadence(function (async, promise) {
+Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
-        var shifter = null
-        console.log('_getBacklog', this.id)
-        if (!this.replaying) {
-            var to = this.government.majority[0]
-            var receiver = { read: new Procession, write: new Procession }
-            this._socket(to, {
-                module: 'conference',
-                method: 'backlog',
-                body: { promise: this.government.promise }
-
-            }, receiver)
-            receiver.read.push(null)
-            shifter = receiver.write.shifter()
-        }
-        var loop = async(function () {
+        console.log('_getBacklog', this.id, this.government.promise)
+        this.record(async)(function () {
+            async([function () {
+            this._ua.fetch({
+                url: this.government.properties[this.government.majority[0]].url
+            }, {
+                url: './backlog',
+                post: { promise: this.government.promise },
+                raise: true
+            }, async())
+            }, function (error) {
+                console.log(error.stack)
+                throw error
+            }])
+        })
+    }, function (body, response) {
+        async.forEach(function (broadcast) {
             async(function () {
-                this.record(async)(function () { shifter.dequeue(async()) })
-            }, function (envelope) {
-                if (envelope == null) {
-                    return [ loop.break ]
-                }
-                var broadcast = envelope.body
-                async(function () {
+                this._entry({
+                    module: 'colleague',
+                    method: 'entry',
+                    body: {
+                        // paxos
+                        body: {
+                            // islander
+                            body: {
+                                method: 'broadcast',
+                                module: 'conference',
+                                key: broadcast.key,
+                                body: {
+                                    method: broadcast.method,
+                                    body: broadcast.request
+                                }
+                            }
+                        }
+                    }
+                }, async())
+            }, function () {
+                async.forEach(function (promise) {
                     this._entry({
                         module: 'colleague',
                         method: 'entry',
@@ -358,40 +400,18 @@ Conference.prototype._getBacklog = cadence(function (async, promise) {
                             body: {
                                 // islander
                                 body: {
-                                    method: 'broadcast',
                                     module: 'conference',
+                                    method: 'reduce',
+                                    from: promise,
                                     key: broadcast.key,
-                                    body: {
-                                        method: broadcast.method,
-                                        body: broadcast.request
-                                    }
+                                    body: broadcast.responses[promise]
                                 }
                             }
                         }
                     }, async())
-                }, function () {
-                    async.forEach(function (promise) {
-                        this._entry({
-                            module: 'colleague',
-                            method: 'entry',
-                            body: {
-                                // paxos
-                                body: {
-                                    // islander
-                                    body: {
-                                        module: 'conference',
-                                        method: 'reduce',
-                                        from: promise,
-                                        key: broadcast.key,
-                                        body: broadcast.responses[promise]
-                                    }
-                                }
-                            }
-                        }, async())
-                    })(Object.keys(broadcast.responses))
-                })
+                })(Object.keys(broadcast.responses))
             })
-        })()
+        })(body)
     }, function () {
         // TODO Probably not a bad idea, but what was I thinking?
         this.read.push({
@@ -436,7 +456,10 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 }, function () {
                     console.log( "IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
-                        var broadcasts = JSON.parse(JSON.stringify(this._broadcasts))
+                        var broadcasts = []
+                        for (var key in this._broadcasts) {
+                            broadcasts.push(JSON.parse(JSON.stringify(this._broadcasts[key])))
+                        }
                         this._backlogs.set(this.government.promise, null, broadcasts)
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())

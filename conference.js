@@ -163,11 +163,9 @@ function Conference (object, constructor) {
     this.read = this._multiplexer.read
     this.write = this._multiplexer.write
 
-    this._multiplexer.route('outgoing', this._client = new Client)
     this._multiplexer.route('incoming', new Server(this, '_connect'))
 
     this._multiplexer.route('conference', new Responder(this._dispatcher))
-    this._multiplexer.route('colleague', this._requester = new Requester)
 
     // TODO Producer and consumer or similar?
     this.write.shifter().pump(this, '_entry')
@@ -197,6 +195,7 @@ Conference.prototype._play = cadence(function (async, envelope) {
     }
     switch (envelope.method) {
     case 'record':
+        console.log('RECORD', envelope)
         this._records.enqueue(envelope, async())
         break
     case 'invoke':
@@ -215,8 +214,9 @@ function record (conference, async) {
                 async(function () {
                     conference._replays.dequeue(async())
                 }, function (envelope) {
-                    assert(envelope.id == envelope.id)
-                    return envelope.body
+                    console.log(envelope, id)
+                    assert(envelope.id == id)
+                    return [ envelope.body ]
                 })
             } else {
                 console.log(this.id, 'recording')
@@ -315,7 +315,7 @@ Conference.prototype._fetch = cadence(function (async, to, header, queue) {
             if (json == null) {
                 return [ loop.break ]
             }
-        })
+        })()
     })
 })
 
@@ -355,7 +355,6 @@ Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
         console.log('_getBacklog', this.id, this.government.promise)
         this.record(async)(function () {
-            async([function () {
             this._ua.fetch({
                 url: this.government.properties[this.government.majority[0]].url
             }, {
@@ -363,12 +362,9 @@ Conference.prototype._getBacklog = cadence(function (async) {
                 post: { promise: this.government.promise },
                 raise: true
             }, async())
-            }, function (error) {
-                console.log(error.stack)
-                throw error
-            }])
         })
     }, function (body, response) {
+        console.log('--------------------------------------------------------------------------------', body)
         async.forEach(function (broadcast) {
             async(function () {
                 this._entry({
@@ -454,12 +450,13 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 }, function () {
                     this._operate([ 'immigrate' ], [ this, immigrant.id ], async())
                 }, function () {
-                    console.log( "IMMIGRATE", this.id, immigrant)
+                    console.log("IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
                         var broadcasts = []
                         for (var key in this._broadcasts) {
                             broadcasts.push(JSON.parse(JSON.stringify(this._broadcasts[key])))
                         }
+                        console.log('SAVING', this.government.promise, broadcasts)
                         this._backlogs.set(this.government.promise, null, broadcasts)
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())
@@ -467,6 +464,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 }, function () {
                     console.log('BACKLOGGED')
                     if (this.government.promise == '1/0' || immigrant.id == this.id) {
+                        console.log('>> broadcast natutralized <<', this.id)
                         this._broadcast(true, 'naturalized', this.government.promise)
                     }
                 })
@@ -507,6 +505,7 @@ Conference.prototype._entry = cadence(function (async, envelope) {
                 request: envelope.body.body,
                 responses: {}
             }
+            console.log('got broadcast', envelope.body)
             async(function () {
                 this._operate([
                     envelope.internal, 'receive', envelope.body.method
@@ -548,6 +547,7 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
         var reduced = []
         for (var promise in broadcast.responses) {
             reduced.push({
+                promise: promise,
                 id: this.government.immigrated.id[promise],
                 value: broadcast.responses[promise]
             })
@@ -564,25 +564,6 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
         delete this._broadcasts[broadcast.key]
     }
 })
-
-Conference.prototype._socket = function (to, body, receiver) {
-    assert(receiver, receiver.read)
-    console.log(receiver)
-    return this._client.connect({
-        module: 'conference',
-        method: 'socket',
-        to: this.getProperties(to),
-        body: body
-    }, receiver)
-}
-
-Conference.prototype.socket = function (to, header, receiver) {
-    this._socket(to, {
-        module: 'conference',
-        method: 'user',
-        body: header
-    }, receiver)
-}
 
 // Honoring back pressure here, but I've not considered if back pressure is
 // going to cause deadlock. I'm sure it can. What happens when the queues

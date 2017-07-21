@@ -41,8 +41,10 @@
     "devDependencies":
     {
                             "abend":                        "1.0.x",
+                            "compassion.colleague":         "0.11.x",
+                            "compassion.conduit":           "0.9.x",
                             "compassion.channel":           "0.6.x",
-                            "compassion.counterfeiter":     "0.0.x",
+                            "compassion.counterfeiter":     "0.1.x",
                             "kibitz":                       "0.10.x",
                             "proof":                        "3.0.x"
     },

@@ -4,7 +4,6 @@ function prove (async, assert) {
     var fs = require('fs')
     var path = require('path')
     var abend = require('abend')
-
     try {
     var Colleague = require('../../compassion.colleague/colleague')
     var Conduit = require('../../compassion.conduit')
@@ -14,7 +13,6 @@ function prove (async, assert) {
     var Conduit = require('compassion.conduit')
     var Counterfeiter = require('compassion.counterfeiter/counterfeiter.generic')(Colleague, Conduit)
     }
-
     var counterfeiter = new Counterfeiter
     var Signal = require('signal')
 
@@ -68,7 +66,6 @@ function prove (async, assert) {
         }, async())
     }, function () {
         counterfeiter.events['fourth'].join(function (envelope) {
-            console.log('FOURTH', envelope)
             return envelope.promise == '5/5'
         }, async())
         counterfeiter.events['third'].join(function (envelope) {
@@ -107,6 +104,6 @@ function prove (async, assert) {
             })
         })()
     }, function () {
-        console.log('done')
+        console.log('-done')
     })
 }

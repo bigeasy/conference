@@ -36,7 +36,7 @@
                             "rescue":                       "3.0.x",
                             "signal":                       "3.0.x",
                             "staccato":                     "3.8.x",
-                            "vizsla":                       "5.2.x"
+                            "vizsla":                       "7.0.x"
     },
     "devDependencies":
     {

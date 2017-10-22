@@ -42,7 +42,7 @@
     {
                             "abend":                        "1.0.x",
                             "byline":                       "5.0.x",
-                            "compassion.colleague":         "0.13.x",
+                            "compassion.colleague":         "0.14.x",
                             "compassion.conduit":           "0.10.x",
                             "compassion.channel":           "0.7.x",
                             "compassion.counterfeiter":     "0.2.x",

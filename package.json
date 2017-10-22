@@ -44,7 +44,7 @@
                             "byline":                       "5.0.x",
                             "compassion.colleague":         "0.14.x",
                             "compassion.conduit":           "0.11.x",
-                            "compassion.channel":           "0.7.x",
+                            "compassion.channel":           "0.8.x",
                             "compassion.counterfeiter":     "0.2.x",
                             "kibitz":                       "0.11.x",
                             "proof":                        "3.0.x"

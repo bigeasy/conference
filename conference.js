@@ -157,14 +157,13 @@ function Conference (object, constructor) {
     //
     this._dispatcher = new Dispatcher(this)
 
-    this._multiplexer = new Multiplexer
+    this._multiplexer = new Multiplexer({
+        incoming: new Server(this, '_connect'),
+        conference: new Responder(this._dispatcher)
+    })
 
     this.read = this._multiplexer.read
     this.write = this._multiplexer.write
-
-    this._multiplexer.route('incoming', new Server(this, '_connect'))
-
-    this._multiplexer.route('conference', new Responder(this._dispatcher))
 
     // TODO Producer and consumer or similar?
     this.write.shifter().pump(this, '_entry')

@@ -46,7 +46,7 @@
                             "compassion.conduit":           "0.11.x",
                             "compassion.channel":           "0.8.x",
                             "compassion.counterfeiter":     "0.4.x",
-                            "kibitz":                       "0.12.x",
+                            "kibitz":                       "0.13.x",
                             "proof":                        "3.0.x"
     },
     "main":                 "conference",

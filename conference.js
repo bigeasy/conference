@@ -17,11 +17,8 @@ var logger = require('prolific.logger').createLogger('conference')
 
 var Operation = require('operation/variadic')
 
-// Invoke round trip requests into an evented message queue.
-var Requester = require('conduit/requester')
-
 // Respond to requests from an evented message queue.
-var Responder = require('conduit/responder')
+var Procedure = require('conduit/procedure')
 
 var Client = require('conduit/client')
 var Server = require('conduit/server')
@@ -45,7 +42,7 @@ var Staccato = require('staccato')
 //
 // It did lead me to consider the folly of ORM, though.
 
-// A `Responder` class specific to the Conference that will respond to
+// A `Procedure` class specific to the Conference that will respond to
 // directives from a Colleague.
 
 // Update: Actually, passing in the builder function feels somewhat immutable,
@@ -159,7 +156,7 @@ function Conference (object, constructor) {
 
     this._multiplexer = new Multiplexer({
         incoming: new Server(this, '_connect'),
-        conference: new Responder(this._dispatcher)
+        conference: new Procedure(this._dispatcher, 'request')
     })
 
     this.read = this._multiplexer.read

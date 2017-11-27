@@ -34,6 +34,7 @@ var Staccato = require('staccato')
 
 var raiseify = require('vizsla/raiseify')
 var jsonify = require('vizsla/jsonify')
+var jsonsify = require('vizsla/jsonsify')
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
@@ -310,9 +311,10 @@ Conference.prototype._fetch = cadence(function (async, to, header, queue) {
                 }, {
                     url: './request',
                     post: header,
-                    gateways: [ raiseify() ]
+                    gateways: [ raiseify(), jsonsify({}) ]
                 }, async())
             }, function (stream) {
+                console.log('HEADERS', 'missed')
                 return new Staccato.Readable(stream)
             })
         }

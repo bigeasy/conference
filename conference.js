@@ -33,6 +33,7 @@ var Cubbyhole = require('cubbyhole')
 var Staccato = require('staccato')
 
 var raiseify = require('vizsla/raiseify')
+var jsonify = require('vizsla/jsonify')
 
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
@@ -370,7 +371,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
             }, {
                 url: './backlog',
                 post: { promise: this.government.promise },
-                raise: true
+                gateways: [ raiseify(), jsonify({}) ]
             }, async())
         })
     }, function (body) {

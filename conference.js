@@ -32,6 +32,9 @@ var Cubbyhole = require('cubbyhole')
 
 var Staccato = require('staccato')
 
+var raiseify = require('vizsla/raiseify')
+var jsonify = require('vizsla/jsonify')
+
 // The patterns below take my back to my efforts to create immutable
 // constructors when immutability was all the rage in Java-land. It would have
 // pained me to create an object that continues to initialize the object after
@@ -307,7 +310,7 @@ Conference.prototype._fetch = cadence(function (async, to, header, queue) {
                 }, {
                     url: './request',
                     post: header,
-                    raise: true
+                    gateways: [ raiseify() ]
                 }, async())
             }, function (stream) {
                 return new Staccato.Readable(stream)
@@ -368,7 +371,7 @@ Conference.prototype._getBacklog = cadence(function (async) {
             }, {
                 url: './backlog',
                 post: { promise: this.government.promise },
-                raise: true
+                gateways: [ raiseify(), jsonify({}) ]
             }, async())
         })
     }, function (body) {

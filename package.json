@@ -45,7 +45,7 @@
                             "compassion.colleague":         "0.21.x",
                             "compassion.conduit":           "0.15.x",
                             "compassion.conduit":           "0.16.x",
-                            "compassion.channel":           "0.15.x",
+                            "compassion.channel":           "0.16.x",
                             "compassion.counterfeiter":     "0.8.x",
                             "kibitz":                       "0.14.x",
                             "proof":                        "3.0.x"

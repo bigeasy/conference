@@ -418,11 +418,6 @@ Conference.prototype._getBacklog = cadence(function (async) {
     })
 })
 
-Conference.prototype._naturalized = cadence(function (async, conference, promise) {
-    this._backlogs.remove(promise)
-    this._operate([ 'naturalized' ], [ this, promise ], async())
-})
-
 Conference.prototype._entry = cadence(function (async, envelope) {
     if (envelope == null || envelope.method != 'entry') {
         return []

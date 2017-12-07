@@ -140,6 +140,7 @@ Dispatcher.prototype.request = cadence(function (async, envelope) {
 function Conference (object, constructor) {
     this._ua = new Vizsla
     logger.info('constructed', {})
+    this.reactor = object
     this.isLeader = false
     this.colleague = null
     this.replaying = false
@@ -194,7 +195,6 @@ Conference.prototype._play = cadence(function (async, envelope) {
     }
     switch (envelope.method) {
     case 'record':
-        console.log('RECORD', envelope)
         this._records.enqueue(envelope, async())
         break
     case 'invoke':
@@ -209,26 +209,17 @@ function record (conference, async) {
         var steps = Array.prototype.slice.call(arguments)
         async(function () {
             if (conference.replaying) {
-                console.log(this.id, 'replaying')
                 async(function () {
                     conference._replays.dequeue(async())
                 }, function (envelope) {
-                    console.log(envelope, id)
                     assert(envelope.id == id)
                     return [ envelope.body ]
                 })
             } else {
-                console.log(this.id, 'recording')
                 async.apply(null, steps)
             }
         }, function (result) {
             result = coalesce(result)
-            console.log({
-                module: 'conference',
-                method: 'record',
-                id: id,
-                body: result
-            })
             conference.read.push({
                 module: 'conference',
                 method: 'record',
@@ -292,7 +283,6 @@ Conference.prototype.getProperties = function (id) {
 Conference.prototype._request = cadence(function (async, envelope) {
     switch (envelope.method) {
     case 'backlog':
-        console.log(envelope)
         this._backlogs.wait(envelope.body.promise, async())
         break
     case 'properties':
@@ -314,7 +304,6 @@ Conference.prototype._fetch = cadence(function (async, to, header, queue) {
                     gateways: [ raiseify(), jsonsify({}) ]
                 }, async())
             }, function (stream) {
-                console.log('HEADERS', 'missed')
                 return new Staccato.Readable(stream)
             })
         }
@@ -366,7 +355,6 @@ Conference.prototype._operate = cadence(function (async, key, vargs) {
 
 Conference.prototype._getBacklog = cadence(function (async) {
     async(function () {
-        console.log('_getBacklog', this.id, this.government.promise)
         this.record(async)(function () {
             this._ua.fetch({
                 url: this.government.properties[this.government.majority[0]].url
@@ -377,7 +365,6 @@ Conference.prototype._getBacklog = cadence(function (async) {
             }, async())
         })
     }, function (body) {
-        console.log('--------------------------------------------------------------------------------', body)
         async.forEach(function (broadcast) {
             async(function () {
                 this._consume({
@@ -385,8 +372,9 @@ Conference.prototype._getBacklog = cadence(function (async) {
                     body: {
                         // islander
                         body: {
-                            method: 'broadcast',
                             module: 'conference',
+                            method: 'broadcast',
+                            internal: broadcast.internal,
                             key: broadcast.key,
                             body: {
                                 method: broadcast.method,
@@ -449,7 +437,6 @@ Conference.prototype._consume = cadence(function (async, entry) {
         async(function () {
             if (entry.body.immigrate) {
                 var immigrant = entry.body.immigrate
-                console.log(immigrant)
                 async(function () {
                     if (entry.body.promise == '1/0') {
                         this._operate([ 'bootstrap' ], [ this ], async())
@@ -459,13 +446,11 @@ Conference.prototype._consume = cadence(function (async, entry) {
                 }, function () {
                     this._operate([ 'immigrate' ], [ this, immigrant.id ], async())
                 }, function () {
-                    console.log("IMMIGRATE", this.id, immigrant)
                     if (immigrant.id != this.id) {
                         var broadcasts = []
                         for (var key in this._broadcasts) {
                             broadcasts.push(JSON.parse(JSON.stringify(this._broadcasts[key])))
                         }
-                        console.log('SAVING', this.government.promise, broadcasts)
                         this._backlogs.set(this.government.promise, null, broadcasts)
                     } else if (this.government.promise != '1/0') {
                         this._getBacklog(async())
@@ -518,7 +503,6 @@ Conference.prototype._consume = cadence(function (async, entry) {
                 request: envelope.body.body,
                 responses: {}
             }
-            console.log('got broadcast', envelope.body)
             async(function () {
                 this._operate([
                     envelope.internal, 'receive', envelope.body.method

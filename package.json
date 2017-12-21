@@ -27,7 +27,7 @@
                             "conduit":                      "0.16.x",
                             "cubbyhole":                    "1.0.x",
                             "extant":                       "1.0.x",
-                            "keyify":                       "0.0.1",
+                            "keyify":                       "0.0.x",
                             "monotonic":                    "3.0.x",
                             "nop":                          "1.0.0",
                             "operation":                    "1.6.x",

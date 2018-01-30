@@ -34,7 +34,7 @@
                             "procession":                   "0.9.x",
                             "prolific.logger":              "5.0.x",
                             "rescue":                       "3.2.x",
-                            "signal":                       "3.2.x",
+                            "signal":                       "3.4.x",
                             "staccato":                     "5.0.x",
                             "vizsla":                       "10.7.x"
     },

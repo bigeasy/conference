@@ -87,16 +87,16 @@ Constructor.prototype.join = function () {
     this._setOperation([ 'join' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.immigrate = function () {
-    this._setOperation([ 'immigrate' ], Array.prototype.slice.call(arguments))
+Constructor.prototype.arrive = function () {
+    this._setOperation([ 'arrive' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.naturalized = function () {
-    this._setOperation([ 'naturalized' ], Array.prototype.slice.call(arguments))
+Constructor.prototype.acclimated = function () {
+    this._setOperation([ 'acclimated' ], Array.prototype.slice.call(arguments))
 }
 
-Constructor.prototype.exile = function () {
-    this._setOperation([ 'exile' ], Array.prototype.slice.call(arguments))
+Constructor.prototype.depart = function () {
+    this._setOperation([ 'depart' ], Array.prototype.slice.call(arguments))
 }
 
 Constructor.prototype.government = function () {
@@ -269,7 +269,7 @@ Conference.prototype.invoke = function (method, body, callback) {
 
 //
 Conference.prototype.getProperties = function (id) {
-    id = coalesce(this.government.immigrated.id[id], id)
+    id = coalesce(this.government.arrived.id[id], id)
     return coalesce(this.government.properties[id])
 }
 
@@ -435,18 +435,18 @@ Conference.prototype._consume = cadence(function (async, entry) {
         this.isLeader = this.government.majority[0] == this.id
         var properties = entry.properties
         async(function () {
-            if (entry.body.immigrate) {
-                var immigrant = entry.body.immigrate
+            if (entry.body.arrive) {
+                var arrival = entry.body.arrive
                 async(function () {
                     if (entry.body.promise == '1/0') {
                         this._operate([ 'bootstrap' ], [ this ], async())
-                    } else if (immigrant.id == this.id) {
+                    } else if (arrival.id == this.id) {
                         this._operate([ 'join' ], [ this ], async())
                     }
                 }, function () {
-                    this._operate([ 'immigrate' ], [ this, immigrant.id ], async())
+                    this._operate([ 'arrive' ], [ this, arrival.id ], async())
                 }, function () {
-                    if (immigrant.id != this.id) {
+                    if (arrival.id != this.id) {
                         var broadcasts = []
                         for (var key in this._broadcasts) {
                             broadcasts.push(JSON.parse(JSON.stringify(this._broadcasts[key])))
@@ -458,16 +458,16 @@ Conference.prototype._consume = cadence(function (async, entry) {
                 }, function () {
                     this.read.push({
                         module: 'conference',
-                        method: 'naturalized',
+                        method: 'acclimated',
                         body: null
                     })
                 })
-            } else if (entry.body.exile) {
-                var exile = entry.body.exile
+            } else if (entry.body.departed) {
+                var depart = entry.body.departed
                 async(function () {
-                    this._operate([ 'exile' ], [ this, exile.id, exile.promise, exile.properties ], async())
+                    this._operate([ 'depart' ], [ this, depart.id, depart.promise, depart.properties ], async())
                 }, function () {
-                    var promise = exile.promise
+                    var promise = depart.promise
                     var broadcasts = []
                     for (var key in this._broadcasts) {
                         delete this._broadcasts[key].responses[promise]
@@ -480,8 +480,8 @@ Conference.prototype._consume = cadence(function (async, entry) {
                 })
             }
         }, function () {
-            if (entry.body.naturalize != null) {
-                this._operate([ 'naturalized' ], [ this, entry.body.naturalize ], async())
+            if (entry.body.acclimate != null) {
+                this._operate([ 'acclimated' ], [ this, entry.body.acclimate ], async())
             }
         }, function () {
             this._operate([ 'government' ], [ this ], async())
@@ -515,7 +515,7 @@ Conference.prototype._consume = cadence(function (async, entry) {
                     method: 'reduce',
                     key: envelope.key,
                     internal: coalesce(envelope.internal, false),
-                    from: this.government.immigrated.promise[this.id],
+                    from: this.government.arrived.promise[this.id],
                     body: coalesce(response)
                 })
             })
@@ -533,7 +533,7 @@ Conference.prototype._consume = cadence(function (async, entry) {
 
 Conference.prototype._checkReduced = cadence(function (async, broadcast) {
     var complete = true
-    for (var promise in this.government.immigrated.id) {
+    for (var promise in this.government.arrived.id) {
         if (!(promise in broadcast.responses)) {
             complete = false
             break
@@ -545,7 +545,7 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
         for (var promise in broadcast.responses) {
             reduced.push({
                 promise: promise,
-                id: this.government.immigrated.id[promise],
+                id: this.government.arrived.id[promise],
                 value: broadcast.responses[promise]
             })
         }
@@ -578,7 +578,7 @@ Conference.prototype._checkReduced = cadence(function (async, broadcast) {
 //
 Conference.prototype._broadcast = function (internal, method, message) {
     var cookie = this._nextCookie()
-    var uniqueId = this.government.immigrated.promise[this.id]
+    var uniqueId = this.government.arrived.promise[this.id]
     var key = method + '[' + uniqueId + '](' + cookie + ')'
     this.read.push({
         module: 'conference',

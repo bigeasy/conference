@@ -48,7 +48,7 @@ module.exports = function (assert, reduced) {
                 assert(result, 'x', 'record error-first callback')
             })
         }),
-        naturalized: cadence(function (async) {
+        acclimated: cadence(function (async) {
             return null
         }),
         catalog: cadence(function (async, conference, value) {
@@ -92,7 +92,6 @@ module.exports = function (assert, reduced) {
                 }, {
                     promise: '4/0', id: 'third', value: 0
                 }], 'reduced responses')
-        console.log("REDUCED UNLATCH")
                 reduced.unlatch()
             }
         }),
@@ -118,7 +117,7 @@ module.exports = function (assert, reduced) {
             constructor.bootstrap()
             constructor.join()
             constructor.immigrate(cadence(function (async) {}))
-            constructor.naturalized()
+            constructor.acclimated()
             constructor.exile()
             constructor.government()
             constructor.socket()

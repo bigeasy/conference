@@ -42,10 +42,10 @@
     {
                             "abend":                        "1.0.x",
                             "byline":                       "5.0.x",
-                            "compassion.colleague":         "0.26.x",
+                            "compassion.colleague":         "0.27.x",
                             "compassion.conduit":           "0.16.x",
-                            "compassion.channel":           "0.18.x",
-                            "compassion.counterfeiter":     "0.12.x",
+                            "compassion.channel":           "0.19.x",
+                            "compassion.counterfeiter":     "0.13.x",
                             "kibitz":                       "0.17.x",
                             "proof":                        "3.0.x"
     },

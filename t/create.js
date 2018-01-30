@@ -92,10 +92,12 @@ module.exports = function (assert, reduced) {
                 }, {
                     promise: '4/0', id: 'third', value: 0
                 }], 'reduced responses')
+        console.log("REDUCED UNLATCH")
                 reduced.unlatch()
             }
         }),
-        exile: cadence(function (async, conference, id, promise, properties) {
+        depart: cadence(function (async, conference, id, promise, properties) {
+            console.log('DEPARTERERED')
             if (conference.id == 'third') {
                 assert({
                     id: id,
@@ -105,7 +107,7 @@ module.exports = function (assert, reduced) {
                     id: 'fourth',
                     promise: '7/0',
                     properties: { key: 'value', url: 'http://127.0.0.1:8888/fourth/' }
-                }, 'exile')
+                }, 'depart')
             }
         })
     }
@@ -116,9 +118,9 @@ module.exports = function (assert, reduced) {
             constructor.setProperties({ key: 'value' })
             constructor.bootstrap()
             constructor.join()
-            constructor.immigrate(cadence(function (async) {}))
+            constructor.arrive(cadence(function (async) {}))
             constructor.acclimated()
-            constructor.exile()
+            constructor.depart()
             constructor.government()
             constructor.socket()
             constructor.receive('message')

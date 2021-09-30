@@ -1,0 +1,78 @@
+1633005820997 run  t/counterfeiter.t.js
+1633005821040 plan t/counterfeiter.t.js 8
+1633005821041 bail t/counterfeiter.t.js Bail out!
+1633005821043 err  t/counterfeiter.t.js /Users/alan/git/ecma/consensus/conference/node_modules/proof/exit.js:5
+1633005821043 err  t/counterfeiter.t.js   throw error /*\*-* Proof framework rewthrowing test generated error. See below. *-*\*/
+1633005821043 err  t/counterfeiter.t.js   ^
+1633005821044 err  t/counterfeiter.t.js Error: Cannot find module 'compassion.colleague/colleague'
+1633005821044 err  t/counterfeiter.t.js Require stack:
+1633005821044 err  t/counterfeiter.t.js - /Users/alan/git/ecma/consensus/conference/t/counterfeiter.t.js
+1633005821044 err  t/counterfeiter.t.js     at Function.Module._resolveFilename (node:internal/modules/cjs/loader:927:15)
+1633005821044 err  t/counterfeiter.t.js     at Function.Module._load (node:internal/modules/cjs/loader:772:27)
+1633005821044 err  t/counterfeiter.t.js     at Module.require (node:internal/modules/cjs/loader:999:19)
+1633005821044 err  t/counterfeiter.t.js     at require (node:internal/modules/cjs/helpers:93:18)
+1633005821044 err  t/counterfeiter.t.js     at prove (/Users/alan/git/ecma/consensus/conference/t/counterfeiter.t.js:12:21)
+1633005821044 err  t/counterfeiter.t.js     at invoke (/Users/alan/git/ecma/consensus/conference/node_modules/cadence/cadence.js:205:26)
+1633005821044 err  t/counterfeiter.t.js     at execute (/Users/alan/git/ecma/consensus/conference/node_modules/cadence/cadence.js:319:9)
+1633005821044 err  t/counterfeiter.t.js     at f (/Users/alan/git/ecma/consensus/conference/node_modules/cadence/cadence.js:348:43)
+1633005821044 err  t/counterfeiter.t.js     at /Users/alan/git/ecma/consensus/conference/node_modules/proof/scaffold.js:83:23
+1633005821044 err  t/counterfeiter.t.js     at invoke (/Users/alan/git/ecma/consensus/conference/node_modules/cadence/cadence.js:205:26) {
+1633005821044 err  t/counterfeiter.t.js   code: 'MODULE_NOT_FOUND',
+1633005821044 err  t/counterfeiter.t.js   requireStack: [ '/Users/alan/git/ecma/consensus/conference/t/counterfeiter.t.js' ]
+1633005821044 err  t/counterfeiter.t.js }
+1633005821049 exit t/counterfeiter.t.js 1 null
+1633005821062 run  t/replay.bootstrap.t.js
+1633005821103 plan t/replay.bootstrap.t.js 1
+1633005821113 bail t/replay.bootstrap.t.js Bail out!
+1633005821115 err  t/replay.bootstrap.t.js /Users/alan/git/ecma/consensus/conference/node_modules/proof/exit.js:5
+1633005821116 err  t/replay.bootstrap.t.js   throw error /*\*-* Proof framework rewthrowing test generated error. See below. *-*\*/
+1633005821116 err  t/replay.bootstrap.t.js   ^
+1633005821116 err  t/replay.bootstrap.t.js Error: Cannot find module 'compassion.channel/channel'
+1633005821116 err  t/replay.bootstrap.t.js Require stack:
+1633005821116 err  t/replay.bootstrap.t.js - /Users/alan/git/ecma/consensus/conference/t/replay.js
+1633005821116 err  t/replay.bootstrap.t.js - /Users/alan/git/ecma/consensus/conference/t/replay.bootstrap.t.js
+1633005821116 err  t/replay.bootstrap.t.js     at Function.Module._resolveFilename (node:internal/modules/cjs/loader:927:15)
+1633005821116 err  t/replay.bootstrap.t.js     at Function.Module._load (node:internal/modules/cjs/loader:772:27)
+1633005821116 err  t/replay.bootstrap.t.js     at Module.require (node:internal/modules/cjs/loader:999:19)
+1633005821116 err  t/replay.bootstrap.t.js     at require (node:internal/modules/cjs/helpers:93:18)
+1633005821116 err  t/replay.bootstrap.t.js     at Object.<anonymous> (/Users/alan/git/ecma/consensus/conference/t/replay.js:11:15)
+1633005821116 err  t/replay.bootstrap.t.js     at Module._compile (node:internal/modules/cjs/loader:1095:14)
+1633005821116 err  t/replay.bootstrap.t.js     at Object.Module._extensions..js (node:internal/modules/cjs/loader:1124:10)
+1633005821116 err  t/replay.bootstrap.t.js     at Module.load (node:internal/modules/cjs/loader:975:32)
+1633005821116 err  t/replay.bootstrap.t.js     at Function.Module._load (node:internal/modules/cjs/loader:816:12)
+1633005821116 err  t/replay.bootstrap.t.js     at Module.require (node:internal/modules/cjs/loader:999:19) {
+1633005821116 err  t/replay.bootstrap.t.js   code: 'MODULE_NOT_FOUND',
+1633005821116 err  t/replay.bootstrap.t.js   requireStack: [
+1633005821116 err  t/replay.bootstrap.t.js     '/Users/alan/git/ecma/consensus/conference/t/replay.js',
+1633005821116 err  t/replay.bootstrap.t.js     '/Users/alan/git/ecma/consensus/conference/t/replay.bootstrap.t.js'
+1633005821116 err  t/replay.bootstrap.t.js   ]
+1633005821116 err  t/replay.bootstrap.t.js }
+1633005821129 exit t/replay.bootstrap.t.js 1 null
+1633005821132 run  t/replay.onboarding.t.js
+1633005821176 plan t/replay.onboarding.t.js 5
+1633005821183 bail t/replay.onboarding.t.js Bail out!
+1633005821185 err  t/replay.onboarding.t.js /Users/alan/git/ecma/consensus/conference/node_modules/proof/exit.js:5
+1633005821185 err  t/replay.onboarding.t.js   throw error /*\*-* Proof framework rewthrowing test generated error. See below. *-*\*/
+1633005821185 err  t/replay.onboarding.t.js   ^
+1633005821186 err  t/replay.onboarding.t.js Error: Cannot find module 'compassion.channel/channel'
+1633005821186 err  t/replay.onboarding.t.js Require stack:
+1633005821186 err  t/replay.onboarding.t.js - /Users/alan/git/ecma/consensus/conference/t/replay.js
+1633005821186 err  t/replay.onboarding.t.js - /Users/alan/git/ecma/consensus/conference/t/replay.onboarding.t.js
+1633005821186 err  t/replay.onboarding.t.js     at Function.Module._resolveFilename (node:internal/modules/cjs/loader:927:15)
+1633005821186 err  t/replay.onboarding.t.js     at Function.Module._load (node:internal/modules/cjs/loader:772:27)
+1633005821186 err  t/replay.onboarding.t.js     at Module.require (node:internal/modules/cjs/loader:999:19)
+1633005821186 err  t/replay.onboarding.t.js     at require (node:internal/modules/cjs/helpers:93:18)
+1633005821186 err  t/replay.onboarding.t.js     at Object.<anonymous> (/Users/alan/git/ecma/consensus/conference/t/replay.js:11:15)
+1633005821186 err  t/replay.onboarding.t.js     at Module._compile (node:internal/modules/cjs/loader:1095:14)
+1633005821186 err  t/replay.onboarding.t.js     at Object.Module._extensions..js (node:internal/modules/cjs/loader:1124:10)
+1633005821186 err  t/replay.onboarding.t.js     at Module.load (node:internal/modules/cjs/loader:975:32)
+1633005821186 err  t/replay.onboarding.t.js     at Function.Module._load (node:internal/modules/cjs/loader:816:12)
+1633005821186 err  t/replay.onboarding.t.js     at Module.require (node:internal/modules/cjs/loader:999:19) {
+1633005821186 err  t/replay.onboarding.t.js   code: 'MODULE_NOT_FOUND',
+1633005821186 err  t/replay.onboarding.t.js   requireStack: [
+1633005821186 err  t/replay.onboarding.t.js     '/Users/alan/git/ecma/consensus/conference/t/replay.js',
+1633005821186 err  t/replay.onboarding.t.js     '/Users/alan/git/ecma/consensus/conference/t/replay.onboarding.t.js'
+1633005821186 err  t/replay.onboarding.t.js   ]
+1633005821186 err  t/replay.onboarding.t.js }
+1633005821201 exit t/replay.onboarding.t.js 1 null
+1633005821201 eof  *

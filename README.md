@@ -1,18 +1,18 @@
-[![Actions Status](https://github.com/bigeasy/ascension/workflows/Node%20CI/badge.svg)](https://github.com/bigeasy/ascension/actions)
-[![codecov](https://codecov.io/gh/bigeasy/ascension/branch/master/graph/badge.svg)](https://codecov.io/gh/bigeasy/ascension)
+[![Actions Status](https://github.com/bigeasy/conference/workflows/Node%20CI/badge.svg)](https://github.com/bigeasy/conference/actions)
+[![codecov](https://codecov.io/gh/bigeasy/conference/branch/master/graph/badge.svg)](https://codecov.io/gh/bigeasy/conference)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Reduce messages from an atomic log.
 
-| What          | Where                                         |
+| What          | Where                                             |
 | --- | --- |
-| Discussion    | https://github.com/bigeasy/conference/issues/1 |
-| Documentation | https://bigeasy.github.io/conference           |
-| Source        | https://github.com/bigeasy/conference          |
-| Issues        | https://github.com/bigeasy/conference/issues   |
-| CI            | https://travis-ci.org/bigeasy/conference       |
-| Coverage:     | https://codecov.io/gh/bigeasy/conference       |
-| License:      | MIT                                           |
+| Discussion    | https://github.com/bigeasy/conference/issues/1    |
+| Documentation | https://bigeasy.github.io/conference              |
+| Source        | https://github.com/bigeasy/conference             |
+| Issues        | https://github.com/bigeasy/conference/issues      |
+| CI            | https://travis-ci.org/bigeasy/conference          |
+| Coverage:     | https://codecov.io/gh/bigeasy/conference          |
+| License:      | MIT                                               |
 
 Ascension installs from NPM.
 

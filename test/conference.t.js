@@ -23,40 +23,40 @@ require('proof')(7, okay => {
         }, 'snapshot')
         colleague.join(snapshot)
         colleague.arrive('2/0')
-        okay(colleague.reduce('1/0', 'a', { value: 2 }), {
+        okay(colleague.reduce('1/0', 'a', { value: 2 }), [{
             key: 'a',
             missing: [ '2/0' ],
             map: { value: 1 },
             reduce: { '1/0': { value: 2 } }
-        }, 'reduced snapshot')
+        }], 'reduced snapshot')
     }
 
     conference.arrive('2/0')
 
-    okay(conference.reduce('1/0', 'a', { value: 2 }), {
+    okay(conference.reduce('1/0', 'a', { value: 2 }), [{
         key: 'a',
         missing: [ '2/0' ],
         map: { value: 1 },
         reduce: { '1/0': { value: 2 } }
-    }, 'reduced')
+    }], 'reduced')
 
     conference.map('b', { value: 1 })
 
-    okay(conference.reduce('1/0', 'b', { value: 2 }), null, 'reduced null')
+    okay(conference.reduce('1/0', 'b', { value: 2 }), [], 'reduced none')
     const reduction = conference.reduce('2/0', 'b', { value: 3 })
-    okay(Conference.toArray(reduction), [{
+    okay(Conference.toArray(reduction[0]), [{
         promise: '1/0',
         value: { value: 2 }
     }, {
         promise: '2/0',
         value: { value: 3 }
     }], 'to array')
-    okay(reduction, {
+    okay(reduction, [{
         key: 'b',
         missing: [],
         map: { value: 1 },
         reduce: { '1/0': { value: 2 }, '2/0': { value: 3 } }
-    }, 'reduce many')
+    }], 'reduce many')
 
     conference.map('d', { value: 1 })
 

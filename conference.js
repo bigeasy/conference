@@ -54,9 +54,9 @@ class Conference {
         if (reductions == this.instances.length - broadcast.missing.length) {
             assert(reductions, this.instances.map(promise => !~broadcast.missing.indexOf(promise)), 'bad join state')
             delete this.broadcasts[key]
-            return broadcast
+            return [ broadcast ]
         }
-        return null
+        return []
     }
 
     depart (promise) {
@@ -64,10 +64,7 @@ class Conference {
         const reductions = []
         for (const key in this.broadcasts) {
             delete this.broadcasts[key].reduce[promise]
-            const reduction = this._check(key)
-            if (reduction != null) {
-                reductions.push(reduction)
-            }
+            reductions.push.apply(reductions, this._check(key))
         }
         return reductions
     }

@@ -26,9 +26,7 @@
 require('proof')(1, okay => {
     // ## Overview
 
-    {
-        okay('okay')
-    }
+    okay('okay')
 })
 
 // You can run this unit test yourself to see the output from the various

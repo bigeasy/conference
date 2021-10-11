@@ -58,8 +58,6 @@ node test/readme.t.js
 ## Overview
 
 ```javascript
-//{ "name": "test", "mode": "code" }
-{
-    okay('okay')
-}
+//{ "name": "test" }
+okay('okay')
 ```

@@ -47,3 +47,7 @@ node test/readme.t.js
 ```
 
 ## Overview
+
+```javascript
+okay('okay')
+```

@@ -25,7 +25,6 @@ require('proof')(7, okay => {
         colleague.arrive('2/0')
         okay(colleague.reduce('a', '1/0', { value: 2 }), [{
             key: 'a',
-            missing: [ '2/0' ],
             map: { value: 1 },
             reduce: { '1/0': { value: 2 } }
         }], 'reduced snapshot')
@@ -35,7 +34,6 @@ require('proof')(7, okay => {
 
     okay(conference.reduce('a', '1/0', { value: 2 }), [{
         key: 'a',
-        missing: [ '2/0' ],
         map: { value: 1 },
         reduce: { '1/0': { value: 2 } }
     }], 'reduced')
@@ -53,7 +51,6 @@ require('proof')(7, okay => {
     }], 'to array')
     okay(reduction, [{
         key: 'b',
-        missing: [],
         map: { value: 1 },
         reduce: { '1/0': { value: 2 }, '2/0': { value: 3 } }
     }], 'reduce many')
@@ -64,7 +61,6 @@ require('proof')(7, okay => {
     conference.reduce('c', '1/0', { value: 2 })
     okay(conference.depart('2/0'), [{
         key: 'c',
-        missing: [],
         map: { value: 1 },
         reduce: { '1/0': { value: 2 } }
     }], 'reduce depart')

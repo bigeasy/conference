@@ -49,12 +49,12 @@ class Conference {
     }
 
     _check (key) {
-        const broadcast = this.broadcasts[key]
-        const reductions = Object.keys(broadcast.reduce).length
-        if (reductions == this.instances.length - broadcast.missing.length) {
-            assert(reductions, this.instances.map(promise => !~broadcast.missing.indexOf(promise)), 'bad join state')
+        const { missing, map, reduce } = this.broadcasts[key]
+        const reductions = Object.keys(reduce).length
+        if (reductions == this.instances.length - missing.length) {
+            assert(reductions, this.instances.map(promise => !~missing.indexOf(promise)), 'bad join state')
             delete this.broadcasts[key]
-            return [ broadcast ]
+            return [{ key, map, reduce }]
         }
         return []
     }

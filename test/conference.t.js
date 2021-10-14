@@ -23,7 +23,7 @@ require('proof')(7, okay => {
         }, 'snapshot')
         colleague.join(snapshot)
         colleague.arrive('2/0')
-        okay(colleague.reduce('1/0', 'a', { value: 2 }), [{
+        okay(colleague.reduce('a', '1/0', { value: 2 }), [{
             key: 'a',
             missing: [ '2/0' ],
             map: { value: 1 },
@@ -33,7 +33,7 @@ require('proof')(7, okay => {
 
     conference.arrive('2/0')
 
-    okay(conference.reduce('1/0', 'a', { value: 2 }), [{
+    okay(conference.reduce('a', '1/0', { value: 2 }), [{
         key: 'a',
         missing: [ '2/0' ],
         map: { value: 1 },
@@ -42,8 +42,8 @@ require('proof')(7, okay => {
 
     conference.map('b', { value: 1 })
 
-    okay(conference.reduce('1/0', 'b', { value: 2 }), [], 'reduced none')
-    const reduction = conference.reduce('2/0', 'b', { value: 3 })
+    okay(conference.reduce('b', '1/0', { value: 2 }), [], 'reduced none')
+    const reduction = conference.reduce('b', '2/0', { value: 3 })
     okay(Conference.toArray(reduction[0]), [{
         promise: '1/0',
         value: { value: 2 }
@@ -61,7 +61,7 @@ require('proof')(7, okay => {
     conference.map('d', { value: 1 })
 
     conference.map('c', { value: 1 })
-    conference.reduce('1/0', 'c', { value: 2 })
+    conference.reduce('c', '1/0', { value: 2 })
     okay(conference.depart('2/0'), [{
         key: 'c',
         missing: [],
@@ -69,5 +69,5 @@ require('proof')(7, okay => {
         reduce: { '1/0': { value: 2 } }
     }], 'reduce depart')
 
-    conference.reduce('1/0', 'd', { value: 2 })
+    conference.reduce('d', '1/0', { value: 2 })
 })

@@ -43,7 +43,7 @@ class Conference {
         }
     }
 
-    reduce (promise, key, message) {
+    reduce (key, promise, message) {
         this.broadcasts[key].reduce[promise] = message
         return this._check(key)
     }

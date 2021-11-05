@@ -23,7 +23,7 @@
 // Proof `okay` function to assert out statements in the readme. A Proof unit test
 // generally looks like this.
 
-require('proof')(6, okay => {
+require('proof')(7, okay => {
     // ## Overview
     //
     // Require.
